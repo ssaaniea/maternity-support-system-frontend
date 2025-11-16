@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:project_frontend/screens/login_screen.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  late TextEditingController _emailController;
+  late TextEditingController _passwordController;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +43,7 @@ class SignupScreen extends StatelessWidget {
 
               TextField(
                 decoration: InputDecoration(
-                  hintText: ('email'),
+                  hintText: 'email',
                   hintStyle: TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -49,7 +57,7 @@ class SignupScreen extends StatelessWidget {
               Text('Enter a password'),
               TextField(
                 decoration: InputDecoration(
-                  hintText: ('password'),
+                  hintText: 'password',
                   hintStyle: TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -57,6 +65,9 @@ class SignupScreen extends StatelessWidget {
                   fillColor: Colors.white,
                   filled: true,
                 ),
+                onChanged: (value) {
+                  print('password is $value');
+                },
               ),
               Text('Select your role'),
               DropdownMenu<String>(

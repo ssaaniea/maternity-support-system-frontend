@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/screens/login_screen.dart';
+import 'package:project_frontend/screens/mother/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -130,6 +136,82 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _onSignUpPressed(
+    String email,
+    String password,
+    String role,
+  ) async {
+    const signupRoute = '$kBaseRoute/auth/signup';
+
+    var body = jsonEncode({"email": email, "password": password, "role": role});
+
+    try {
+      final response = await post(
+        Uri.parse(signupRoute),
+        headers: {"Accept": "*/*", "Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final parsedBody = jsonDecode(response.body);
+
+        print(parsedBody);
+
+        final token = parsedBody['token']; // from backend
+        final role = parsedBody['data']["role"];
+
+        print('role, ${role}, token: ${token}');
+
+        // Save token locally
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("jwt_token", token);
+        await prefs.setString("user_role", role);
+
+        // Navigate by role
+        if (role == 'mother') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute<void>(builder: (context) => const HomeScreen()),
+            (r) => false,
+          );
+        } else if (role == 'admin') {
+          // TODO: replace with your admin screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute<void>(builder: (context) => const Placeholder()),
+            (r) => false,
+          );
+        } else if (role == 'doctor') {
+          // TODO: replace with your doctor screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute<void>(builder: (context) => const Placeholder()),
+            (r) => false,
+          );
+        } else if (role == 'caregiver') {
+          // TODO: replace with your caregiver screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute<void>(builder: (context) => const Placeholder()),
+            (r) => false,
+          );
+        }
+      } else {
+        print('error');
+        final error = jsonDecode(response.body);
+        _showError(error['message'] ?? "Login failed");
+      }
+    } catch (e) {
+      _showError("Something went wrong: $e");
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }

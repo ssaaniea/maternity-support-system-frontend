@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_frontend/screens/mother/mother_app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project_frontend/screens/login_screen.dart';
 import 'package:project_frontend/screens/mother/home_screen.dart';
@@ -33,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (role == "mother") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const MotherAppShell()),
         );
       } else if (role == "admin") {
         Navigator.pushReplacement(

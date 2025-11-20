@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
         headers: {"Accept": "*/*", "Content-Type": "application/json"},
         body: body,
       );
-
+      print(response);
       if (response.statusCode == 200) {
         final parsedBody = jsonDecode(response.body);
 

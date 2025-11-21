@@ -22,10 +22,10 @@ class CaregiverListScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      height: 40,
-                      width: 40,
+                      height: 50,
+                      width: 50,
                       decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 0, 0, 0),
+                        color: const Color.fromARGB(255, 238, 214, 214),
                         borderRadius: BorderRadius.circular(200),
                       ),
                     ),
@@ -35,10 +35,10 @@ class CaregiverListScreen extends StatelessWidget {
                       spacing: 2,
                       children: [
                         Text(
-                          'selena gomez',
+                          'fathima ',
 
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 15.5,
                           ),
                         ),
                         Text(
@@ -56,7 +56,7 @@ class CaregiverListScreen extends StatelessWidget {
 
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 136, 239, 135),
+                    backgroundColor: const Color.fromARGB(255, 153, 241, 152),
                     elevation: 0,
                   ),
                   onPressed: () => {},
@@ -65,7 +65,8 @@ class CaregiverListScreen extends StatelessWidget {
 
                     style: TextStyle(
                       fontSize: 10,
-                      color: const Color.fromARGB(255, 248, 247, 247),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),

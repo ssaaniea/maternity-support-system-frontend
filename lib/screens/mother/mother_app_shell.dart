@@ -2,6 +2,7 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import 'package:flutter/material.dart';
 import 'package:project_frontend/screens/mother/caregiver_list_screen.dart';
 import 'package:project_frontend/screens/mother/home_screen.dart';
+import 'package:project_frontend/screens/mother/profile_screen.dart';
 
 class MotherAppShell extends StatefulWidget {
   const MotherAppShell({super.key});
@@ -16,7 +17,7 @@ final screens = [
   HomeScreen(),
   HomeScreen(),
   CaregiverListScreen(),
-  HomeScreen(),
+  ProfileScreen(),
 ];
 
 class _MotherAppShellState extends State<MotherAppShell> {

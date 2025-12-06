@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:project_frontend/screens/mother/caregiver_list_screen.dart';
 import 'package:project_frontend/screens/mother/home_screen.dart';
 import 'package:project_frontend/screens/mother/profile_screen.dart';
+import 'package:project_frontend/screens/mother/tracking_screen.dart';
 
 class MotherAppShell extends StatefulWidget {
   const MotherAppShell({super.key});
@@ -11,10 +12,17 @@ class MotherAppShell extends StatefulWidget {
   State<MotherAppShell> createState() => _MotherAppShellState();
 }
 
-final iconList = [Icons.home, Icons.abc, Icons.search, Icons.person];
+final iconList = [
+  Icons.home,
+  Icons.track_changes,
+  Icons.explore,
+  Icons.book_online,
+  Icons.person,
+];
 
 final screens = [
   HomeScreen(),
+  TrackingScreen(),
   HomeScreen(),
   CaregiverListScreen(),
   ProfileScreen(),
@@ -44,6 +52,5 @@ class _MotherAppShellState extends State<MotherAppShell> {
         ),
       ),
     );
-    ;
   }
 }

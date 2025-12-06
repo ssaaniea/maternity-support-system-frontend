@@ -5,7 +5,7 @@ import 'package:project_frontend/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -54,7 +54,7 @@ class _SignupScreenState extends State<SignupScreen> {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
         'role': _selectedRole,
-      };R
+      };
 
       // Add profile data for mother
       if (_selectedRole == 'mother') {
@@ -70,7 +70,7 @@ class _SignupScreenState extends State<SignupScreen> {
       }
 
       final response = await http.post(
-        Uri.parse('${kBaseRoute}/auth/signup'),
+        Uri.parse('$kBaseRoute/auth/signup'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
@@ -377,7 +377,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedRole,
+      initialValue: _selectedRole,
       decoration: InputDecoration(
         labelText: 'Role',
         prefixIcon: const Icon(Icons.work_outline),

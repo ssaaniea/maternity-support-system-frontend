@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/screens/mother/home_screen.dart';
+import 'package:project_frontend/screens/mother/mother_app_shell.dart';
 import 'package:project_frontend/screens/signup_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -167,7 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
         if (role == 'mother') {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute<void>(builder: (context) => const HomeScreen()),
+            MaterialPageRoute<void>(
+              builder: (context) => const MotherAppShell(),
+            ),
             (r) => false,
           );
         } else if (role == 'admin') {

@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/screens/mother/mother_app_shell.dart';
+import 'package:project_frontend/screens/mother/signup_details.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -16,12 +19,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _ageController = TextEditingController();
-
-  bool _isPregnant = false;
-  DateTime? _dueDate;
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -33,9 +30,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _phoneController.dispose();
-    _ageController.dispose();
     super.dispose();
   }
 
@@ -43,7 +37,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      _showSnackBar('Passwords do not match', Colors.red);
+      showSnackBar('Passwords do not match', Colors.red);
       return;
     }
 
@@ -55,19 +49,6 @@ class _SignupScreenState extends State<SignupScreen> {
         'password': _passwordController.text,
         'role': _selectedRole,
       };
-
-      // Add profile data for mother
-      if (_selectedRole == 'mother') {
-        body['profileData'] = {
-          'name': _nameController.text.trim(),
-          'phone_no': _phoneController.text.trim(),
-          'age': int.parse(_ageController.text),
-          'is_pregnant': _isPregnant,
-          'expected_delivery_date': _isPregnant && _dueDate != null
-              ? _dueDate!.toIso8601String()
-              : null,
-        };
-      }
 
       final response = await http.post(
         Uri.parse('$kBaseRoute/auth/signup'),
@@ -81,34 +62,57 @@ class _SignupScreenState extends State<SignupScreen> {
 
       final prefs = await SharedPreferences.getInstance();
 
-      if (response.statusCode == 201 && data['success']) {
-        await prefs.setString('token', data['data']['token']);
-        await prefs.setString('userId', data['data']['userId']);
+      print(response.body);
+
+      if (response.statusCode == 201) {
+        await prefs.setString('token', data['token']);
+        await prefs.setString('userId', data['data']['id']);
         await prefs.setString('role', data['data']['role']);
         await prefs.setString('email', data['data']['email']);
 
-        _showSnackBar(data['message'], Colors.green);
+        showSnackBar(data['message'], Colors.green);
 
         // Navigate based on role
         final role = data['data']['role'];
         if (role == 'mother') {
-          Navigator.pushReplacementNamed(context, '/mother-home');
+          // Navigator.pushReplacementNamed(context, '/mother-home');
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute<void>(
+              builder: (context) => const SignupDetails(),
+            ),
+            (Route<dynamic> route) => false,
+          );
         } else if (role == 'doctor') {
-          Navigator.pushReplacementNamed(context, '/doctor-home');
+          // Navigator.pushReplacementNamed(context, '/doctor-home');
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  const MotherAppShell(), // Replace with DoctorHomeScreen
+            ),
+            (Route<dynamic> route) => false,
+          );
         } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          // Navigator.pushReplacementNamed(context, '/home');
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  const MotherAppShell(), // Replace with DefaultHomeScreen
+            ),
+            (Route<dynamic> route) => false,
+          );
         }
       } else {
-        _showSnackBar(data['message'] ?? 'Signup failed', Colors.red);
+        showSnackBar(data['message'] ?? 'Signup failed', Colors.red);
       }
     } catch (e) {
-      _showSnackBar('Network error: ${e.toString()}', Colors.red);
+      showSnackBar('Network error: ${e.toString()}', Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showSnackBar(String message, Color color) {
+  void showSnackBar(String message, Color color) {
+    log(message);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -171,97 +175,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Mother-specific fields
-                if (_selectedRole == 'mother') ...[
-                  _buildTextField(
-                    controller: _nameController,
-                    label: 'Full Name',
-                    hint: 'Enter your full name',
-                    icon: Icons.person_outline,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _phoneController,
-                    label: 'Phone Number',
-                    hint: 'Enter your phone number',
-                    icon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your phone number';
-                      }
-                      if (value.length < 10) {
-                        return 'Please enter a valid phone number';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _ageController,
-                    label: 'Age',
-                    hint: 'Enter your age',
-                    icon: Icons.calendar_today_outlined,
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your age';
-                      }
-                      final age = int.tryParse(value);
-                      if (age == null || age < 18 || age > 50) {
-                        return 'Age must be between 18 and 50';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  CheckboxListTile(
-                    title: const Text('Are you pregnant?'),
-                    value: _isPregnant,
-                    onChanged: (value) {
-                      setState(() {
-                        _isPregnant = value ?? false;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  if (_isPregnant)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event_note_outlined),
-                      title: Text(
-                        _dueDate == null
-                            ? 'Select Due Date'
-                            : 'Due Date: ${_dueDate!.toLocal()}'.split(' ')[0],
-                      ),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 365),
-                          ),
-                        );
-                        if (pickedDate != null) {
-                          setState(() {
-                            _dueDate = pickedDate;
-                          });
-                        }
-                      },
-                    ),
-                ],
 
                 // Password
                 _buildTextField(
@@ -377,7 +290,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue: _selectedRole,
+      // initialValue: _selectedRole,
       decoration: InputDecoration(
         labelText: 'Role',
         prefixIcon: const Icon(Icons.work_outline),

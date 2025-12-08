@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:project_frontend/screens/mother/caregiver_list_screen.dart';
+import 'package:project_frontend/screens/mother/care_screen.dart';
 import 'package:project_frontend/screens/mother/home_screen.dart';
 import 'package:project_frontend/screens/mother/profile_screen.dart';
 import 'package:project_frontend/screens/mother/tracking_screen.dart';
@@ -19,7 +19,7 @@ class _MotherAppShellState extends State<MotherAppShell> {
     HomeScreen(),
     TrackingScreen(),
     HomeScreen(), // Explore placeholder
-    CaregiverListScreen(),
+    CareScreen(),
     ProfileScreen(),
   ];
 
@@ -64,9 +64,9 @@ class _MotherAppShellState extends State<MotherAppShell> {
                 ),
                 _buildNavItem(
                   index: 3,
-                  icon: Iconsax.people,
-                  activeIcon: Iconsax.people5,
-                  label: "Caregivers",
+                  icon: Iconsax.heart,
+                  activeIcon: Iconsax.heart5,
+                  label: "Care",
                 ),
                 _buildNavItem(
                   index: 4,

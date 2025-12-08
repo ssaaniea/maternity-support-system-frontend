@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/screens/mother/care_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,9 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _latestWeight;
   int? _symptomCount;
   int? _lastKickCount;
-
-  // Emergency contacts
-  List<Map<String, dynamic>> _emergencyContacts = [];
 
   @override
   void initState() {
@@ -96,12 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
           if (kickCounts.isNotEmpty) {
             _lastKickCount = kickCounts.last['kick_count'];
           }
-
-          // Get emergency contacts
-          final contacts = profile['emergency_contacts'] as List? ?? [];
-          _emergencyContacts = contacts
-              .map((c) => Map<String, dynamic>.from(c))
-              .toList();
         });
       }
 
@@ -158,109 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (week <= 36)
       return {"size": "Honeydew", "emoji": "🍈", "length": "47.4cm"};
     return {"size": "Watermelon", "emoji": "🍉", "length": "51cm"};
-  }
-
-  // Call emergency contact
-  Future<void> _callContact(String phone) async {
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not make call')),
-      );
-    }
-  }
-
-  // Show SOS dialog
-  void _showSOSDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Iconsax.danger, color: Colors.red),
-            ),
-            const SizedBox(width: 12),
-            const Text('Emergency SOS'),
-          ],
-        ),
-        content: _emergencyContacts.isEmpty
-            ? const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Iconsax.add_circle, size: 48, color: Colors.grey),
-                  SizedBox(height: 12),
-                  Text(
-                    'No emergency contacts saved',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Add contacts in your profile settings',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: _emergencyContacts.map((contact) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.pink.shade100,
-                        child: Text(
-                          (contact['name'] ?? 'U')[0].toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      title: Text(contact['name'] ?? 'Unknown'),
-                      subtitle: Text(contact['relation'] ?? ''),
-                      trailing: IconButton(
-                        icon: const Icon(Iconsax.call, color: Colors.green),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _callContact(contact['phone'] ?? '');
-                        },
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          if (_emergencyContacts.isNotEmpty)
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                // Call first contact
-                _callContact(_emergencyContacts.first['phone'] ?? '');
-              },
-              icon: const Icon(Iconsax.call),
-              label: const Text('Call Now'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   // Mark as delivered
@@ -444,8 +332,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 12),
 
-                // SOS Section
-                _buildSOSCard(),
+                // SOS Quick Access
+                _buildSOSQuickAccess(),
 
                 const SizedBox(height: 16),
               ],
@@ -846,75 +734,69 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSOSCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildSOSQuickAccess() {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to Care tab (index 3 in MotherAppShell)
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CareScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Left side - Text
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Emergency SOS",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _emergencyContacts.isEmpty
-                      ? "Add emergency contacts"
-                      : "${_emergencyContacts.length} contact${_emergencyContacts.length == 1 ? '' : 's'} saved",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          // Right side - Square SOS button
-          GestureDetector(
-            onTap: _showSOSDialog,
-            child: Container(
-              width: 56,
-              height: 56,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.red.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Iconsax.danger, color: Colors.white, size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Emergency SOS",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    "Tap to call emergency contacts",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
-              child: const Center(
-                child: Icon(
-                  Iconsax.danger,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
             ),
-          ),
-        ],
+            const Icon(Iconsax.arrow_right_3, color: Colors.white),
+          ],
+        ),
       ),
     );
   }

@@ -46,7 +46,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
   // Profile data
   String _status = "pregnant";
   int? _pregnancyWeek;
-  String? _name;
 
   // Journal entries
   List<JournalEntry> _journalEntries = [];
@@ -179,7 +178,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
         setState(() {
           _hasProfile = true;
-          _name = profile['name'];
           _status = profile['status'] ?? "pregnant";
           _pregnancyWeek = data['pregnancy_week'];
           _journalEntries = entries;

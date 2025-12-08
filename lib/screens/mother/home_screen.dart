@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:project_frontend/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _latestWeight;
   int? _symptomCount;
   int? _lastKickCount;
+
+  // Emergency contacts
+  List<Map<String, dynamic>> _emergencyContacts = [];
 
   @override
   void initState() {
@@ -90,6 +95,12 @@ class _HomeScreenState extends State<HomeScreen> {
           if (kickCounts.isNotEmpty) {
             _lastKickCount = kickCounts.last['kick_count'];
           }
+
+          // Get emergency contacts
+          final contacts = profile['emergency_contacts'] as List? ?? [];
+          _emergencyContacts = contacts
+              .map((c) => Map<String, dynamic>.from(c))
+              .toList();
         });
       }
 
@@ -148,6 +159,184 @@ class _HomeScreenState extends State<HomeScreen> {
     return {"size": "Watermelon", "emoji": "🍉", "length": "51cm"};
   }
 
+  // Call emergency contact
+  Future<void> _callContact(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not make call')),
+      );
+    }
+  }
+
+  // Show SOS dialog
+  void _showSOSDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.emergency, color: Colors.red),
+            ),
+            const SizedBox(width: 12),
+            const Text('Emergency SOS'),
+          ],
+        ),
+        content: _emergencyContacts.isEmpty
+            ? const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_add, size: 48, color: Colors.grey),
+                  SizedBox(height: 12),
+                  Text(
+                    'No emergency contacts saved',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Add contacts in your profile settings',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _emergencyContacts.map((contact) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.pink.shade100,
+                        child: Text(
+                          (contact['name'] ?? 'U')[0].toUpperCase(),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(contact['name'] ?? 'Unknown'),
+                      subtitle: Text(contact['relation'] ?? ''),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.call, color: Colors.green),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _callContact(contact['phone'] ?? '');
+                        },
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          if (_emergencyContacts.isNotEmpty)
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                // Call first contact
+                _callContact(_emergencyContacts.first['phone'] ?? '');
+              },
+              icon: const Icon(Icons.call),
+              label: const Text('Call Now'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Mark as delivered
+  Future<void> _markAsDelivered() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('🎉', style: TextStyle(fontSize: 28)),
+            SizedBox(width: 12),
+            Text('Congratulations!'),
+          ],
+        ),
+        content: const Text(
+          'Has your baby arrived? This will update your status to "delivered" and change the app to postnatal mode.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not Yet'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Baby is Here!'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token == null) return;
+
+      final response = await http.post(
+        Uri.parse('$kBaseRoute/mother/me/mark-delivery'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'actual_delivery_date': DateTime.now().toIso8601String(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎉 Congratulations on your new baby!'),
+            backgroundColor: Colors.pink,
+          ),
+        );
+        _fetchData(); // Refresh data
+      } else {
+        final data = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['message'] ?? 'Failed to update status'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -160,6 +349,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showSOSDialog,
+        backgroundColor: Colors.red,
+        child: const Icon(Icons.emergency, color: Colors.white, size: 28),
+      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -175,6 +369,27 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.refresh, color: Colors.black54),
             onPressed: _fetchData,
           ),
+          if (isPregnant)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.black54),
+              onSelected: (value) {
+                if (value == 'delivered') {
+                  _markAsDelivered();
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'delivered',
+                  child: Row(
+                    children: [
+                      Icon(Icons.child_friendly, color: Colors.pink),
+                      SizedBox(width: 8),
+                      Text('Mark as Delivered'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       body: Container(

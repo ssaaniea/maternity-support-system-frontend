@@ -602,7 +602,7 @@ class _SignupDetailsState extends State<SignupDetails> {
         "name": _fullNameController.text.trim(),
         "phone_no": _phoneNumberController.text.trim(),
         "age": _ageController.text.trim(),
-        "status": _isPregnant ? "pregnant" : "not_pregnant",
+        "status": _isPregnant ? "pregnant" : "delivered",
         "expected_delivery_date": _isPregnant
             ? _dueDate.toIso8601String()
             : null,

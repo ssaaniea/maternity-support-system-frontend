@@ -14,14 +14,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
-  
+
   // Profile data
   String _name = "Mom";
   String _status = "pregnant";
   int? _pregnancyWeek;
   DateTime? _expectedDeliveryDate;
   DateTime? _actualDeliveryDate;
-  
+
   // Latest tracking data
   double? _latestWeight;
   int? _symptomCount;
@@ -62,25 +62,29 @@ class _HomeScreenState extends State<HomeScreen> {
           _status = profile['status'] ?? "pregnant";
           _pregnancyWeek = data['pregnancy_week'];
           if (profile['expected_delivery_date'] != null) {
-            _expectedDeliveryDate = DateTime.tryParse(profile['expected_delivery_date']);
+            _expectedDeliveryDate = DateTime.tryParse(
+              profile['expected_delivery_date'],
+            );
           }
           if (profile['actual_delivery_date'] != null) {
-            _actualDeliveryDate = DateTime.tryParse(profile['actual_delivery_date']);
+            _actualDeliveryDate = DateTime.tryParse(
+              profile['actual_delivery_date'],
+            );
           }
-          
+
           // Get latest weight from weight_logs
           final weightLogs = profile['weight_logs'] as List? ?? [];
           if (weightLogs.isNotEmpty) {
             _latestWeight = (weightLogs.last['weight_kg'] as num?)?.toDouble();
           }
-          
+
           // Get symptom count from today
           final symptomLogs = profile['symptom_logs'] as List? ?? [];
           if (symptomLogs.isNotEmpty) {
             final lastSymptoms = symptomLogs.last['symptoms'] as List? ?? [];
             _symptomCount = lastSymptoms.length;
           }
-          
+
           // Get last kick count
           final kickCounts = profile['kick_counts'] as List? ?? [];
           if (kickCounts.isNotEmpty) {
@@ -127,14 +131,20 @@ class _HomeScreenState extends State<HomeScreen> {
   // Baby size comparison based on week
   Map<String, String> _getBabySizeInfo() {
     final week = _pregnancyWeek ?? 0;
-    if (week <= 8) return {"size": "Raspberry", "emoji": "🫐", "length": "1.6cm"};
+    if (week <= 8)
+      return {"size": "Raspberry", "emoji": "🫐", "length": "1.6cm"};
     if (week <= 12) return {"size": "Lime", "emoji": "🍋", "length": "5.4cm"};
-    if (week <= 16) return {"size": "Avocado", "emoji": "🥑", "length": "11.6cm"};
-    if (week <= 20) return {"size": "Banana", "emoji": "🍌", "length": "16.5cm"};
+    if (week <= 16)
+      return {"size": "Avocado", "emoji": "🥑", "length": "11.6cm"};
+    if (week <= 20)
+      return {"size": "Banana", "emoji": "🍌", "length": "16.5cm"};
     if (week <= 24) return {"size": "Corn", "emoji": "🌽", "length": "30cm"};
-    if (week <= 28) return {"size": "Eggplant", "emoji": "🍆", "length": "37.6cm"};
-    if (week <= 32) return {"size": "Coconut", "emoji": "🥥", "length": "42.4cm"};
-    if (week <= 36) return {"size": "Honeydew", "emoji": "🍈", "length": "47.4cm"};
+    if (week <= 28)
+      return {"size": "Eggplant", "emoji": "🍆", "length": "37.6cm"};
+    if (week <= 32)
+      return {"size": "Coconut", "emoji": "🥥", "length": "42.4cm"};
+    if (week <= 36)
+      return {"size": "Honeydew", "emoji": "🍈", "length": "47.4cm"};
     return {"size": "Watermelon", "emoji": "🍉", "length": "51cm"};
   }
 
@@ -147,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final isPregnant = _status == "pregnant";
-    
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -155,7 +165,10 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         title: Text(
           '${_getGreeting()}, $_name',
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
@@ -165,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: Container(
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isPregnant
@@ -200,26 +214,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Week Progress (only for pregnant)
                   if (isPregnant) ...[
                     _buildWeekProgress(),
                     const SizedBox(height: 16),
                   ],
-                  
+
                   // Main visual card
                   isPregnant
                       ? _buildPregnancyVisual()
                       : _buildPostnatalVisual(),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Tracker cards
                   isPregnant
                       ? _buildPregnancyTracker()
                       : _buildRecoveryTracker(),
-                  
-                  const SizedBox(height: 100),
+
+                  // const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -249,8 +263,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: i < week
                       ? const Color.fromRGBO(230, 151, 212, 1)
                       : i == week
-                          ? const Color.fromARGB(255, 230, 134, 190)
-                          : const Color.fromARGB(255, 180, 180, 180),
+                      ? const Color.fromARGB(255, 230, 134, 190)
+                      : const Color.fromARGB(255, 180, 180, 180),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -262,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPregnancyVisual() {
     final babyInfo = _getBabySizeInfo();
-    
+
     return Stack(
       children: [
         Center(
@@ -323,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPostnatalVisual() {
     final weeks = _getBabyAgeWeeks();
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -383,7 +397,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.lightbulb_outline, color: Colors.amber, size: 20),
+                const Icon(
+                  Icons.lightbulb_outline,
+                  color: Colors.amber,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -400,7 +418,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getPostnatalTip(int weeks) {
-    if (weeks < 2) return "Rest is essential. Accept help from family and friends.";
+    if (weeks < 2)
+      return "Rest is essential. Accept help from family and friends.";
     if (weeks < 6) return "Remember to attend your postnatal checkup.";
     if (weeks < 12) return "Gentle walks can help with recovery.";
     return "You're doing amazing! Take care of yourself too.";
@@ -481,7 +500,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _buildTrackerCard(
                   icon: Icons.monitor_weight,
                   title: 'Weight',
-                  value: _latestWeight != null ? '${_latestWeight!.toStringAsFixed(1)} kg' : '-',
+                  value: _latestWeight != null
+                      ? '${_latestWeight!.toStringAsFixed(1)} kg'
+                      : '-',
                   bgColor: const Color(0xffeecde6),
                 ),
               ),
@@ -542,7 +563,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _buildTrackerCard(
                   icon: Icons.monitor_weight,
                   title: 'Weight',
-                  value: _latestWeight != null ? '${_latestWeight!.toStringAsFixed(1)} kg' : '-',
+                  value: _latestWeight != null
+                      ? '${_latestWeight!.toStringAsFixed(1)} kg'
+                      : '-',
                   bgColor: Colors.purple.shade100,
                 ),
               ),

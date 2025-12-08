@@ -5,11 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/constants.dart';
-import 'package:project_frontend/screens/mother/tracking/checkup_screen.dart';
-import 'package:project_frontend/screens/mother/tracking/kick_count_screen.dart';
-import 'package:project_frontend/screens/mother/tracking/recovery_screen.dart';
-import 'package:project_frontend/screens/mother/tracking/symptom_screen.dart';
-import 'package:project_frontend/screens/mother/tracking/weight_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -355,11 +350,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showSOSDialog,
-        backgroundColor: Colors.red,
-        child: const Icon(Iconsax.danger, color: Colors.white, size: 28),
-      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -454,8 +444,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 12),
 
-                // Quick Actions
-                _buildQuickActions(isPregnant),
+                // SOS Section
+                _buildSOSCard(),
 
                 const SizedBox(height: 16),
               ],
@@ -856,120 +846,75 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickActions(bool isPregnant) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Quick Log",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 80, 80, 80),
+  Widget _buildSOSCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickActionButton(
-                icon: Iconsax.weight,
-                label: "Weight",
-                color: Colors.teal,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const WeightScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                icon: Iconsax.health,
-                label: "Symptoms",
-                color: Colors.purple,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SymptomScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                icon: isPregnant ? Iconsax.happyemoji : Iconsax.heart,
-                label: isPregnant ? "Kicks" : "Recovery",
-                color: isPregnant ? Colors.orange : Colors.red,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => isPregnant
-                        ? const KickCountScreen()
-                        : const RecoveryScreen(),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Left side - Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Emergency SOS",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
                   ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  _emergencyContacts.isEmpty
+                      ? "Add emergency contacts"
+                      : "${_emergencyContacts.length} contact${_emergencyContacts.length == 1 ? '' : 's'} saved",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                icon: Iconsax.hospital,
-                label: "Checkup",
-                color: Colors.green,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CheckupScreen()),
+          ),
+          // Right side - Square SOS button
+          GestureDetector(
+            onTap: _showSOSDialog,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(
+                  Iconsax.danger,
+                  color: Colors.white,
+                  size: 28,
                 ),
               ),
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,1 +1,1 @@
-const kBaseRoute = 'http://192.168.1.4:3000/api';
+const kBaseRoute = 'http://192.168.1.2:3000/api';

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/screens/mother/caregiver_details_screen.dart';
+import 'package:project_frontend/screens/mother/caregiver_list_screen.dart';
 import 'package:project_frontend/widgets/tracking_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,6 +21,7 @@ class _CareScreenState extends State<CareScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _emergencyContacts = [];
   List<Map<String, dynamic>> _caregivers = [];
+  List<Map<String, dynamic>> _doctors = [];
   List<Map<String, dynamic>> _myBookings = [];
 
   @override
@@ -61,6 +64,16 @@ class _CareScreenState extends State<CareScreen> {
       if (caregiversRes.statusCode == 200) {
         final data = jsonDecode(caregiversRes.body);
         _caregivers = List<Map<String, dynamic>>.from(data['data'] ?? []);
+      }
+
+      // Fetch doctors
+      final doctorsRes = await http.get(
+        Uri.parse('$kBaseRoute/doctor/'),
+        headers: headers,
+      );
+      if (doctorsRes.statusCode == 200) {
+        final data = jsonDecode(doctorsRes.body);
+        _doctors = List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
 
       // Fetch my bookings
@@ -407,6 +420,10 @@ class _CareScreenState extends State<CareScreen> {
               _buildCaregiversSection(),
               const SizedBox(height: 24),
 
+              // Find Doctors
+              _buildDoctorsSection(),
+              const SizedBox(height: 24),
+
               // My Bookings
               if (_myBookings.isNotEmpty) _buildBookingsSection(),
 
@@ -652,7 +669,12 @@ class _CareScreenState extends State<CareScreen> {
             const Spacer(),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to full caregiver list
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CaregiverListScreen(),
+                  ),
+                );
               },
               child: const Text("See All"),
             ),
@@ -699,7 +721,16 @@ class _CareScreenState extends State<CareScreen> {
       'wholeday': Colors.green,
     };
 
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CaregiverDetailsScreen(caregiver: caregiver),
+          ),
+        );
+      },
+      child: Container(
       width: 160,
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(16),
@@ -788,6 +819,118 @@ class _CareScreenState extends State<CareScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Text(
+              "Find Doctors",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Spacer(),
+            // You can add a See All for doctors if needed
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_doctors.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(Iconsax.health, size: 48, color: Colors.grey[300]),
+                const SizedBox(height: 12),
+                Text(
+                  "No doctors available",
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          )
+        else
+          SizedBox(
+            height: 160,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _doctors.length,
+              itemBuilder: (context, index) {
+                return _buildDoctorCard(_doctors[index]);
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDoctorCard(Map<String, dynamic> doctor) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Iconsax.health, color: Colors.blue.shade400, size: 24),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            doctor['name'] ?? 'Unknown',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            doctor['specialised'] ?? 'General',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 12,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Spacer(),
+          Text(
+            doctor['degree'] ?? '',
+            style: TextStyle(
+              color: Colors.blue.shade700,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

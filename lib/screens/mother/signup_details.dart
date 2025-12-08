@@ -260,13 +260,17 @@ class _SignupDetailsState extends State<SignupDetails> {
 
     try {
       Map<String, dynamic> body = {
-        "name": _fullNameController,
-        "phone_no": _phoneNumberController,
-        "age": _ageController,
-        "status": _isPregnant, // "pregnant":, delivered
-        "expected_delivery_date": _dueDate,
-        "last_period_date": _lastPeriodDate,
-        "address": _adresscontroller,
+        "name": _fullNameController.text.trim(),
+        "phone_no": _phoneNumberController.text.trim(),
+        "age": _ageController.text.trim(),
+        "status": _isPregnant ? "pregnant" : "not_pregnant",
+        "expected_delivery_date": _isPregnant
+            ? _dueDate.toIso8601String()
+            : null,
+        "last_period_date": _isPregnant
+            ? _lastPeriodDate.toIso8601String()
+            : null,
+        "address": _adresscontroller.text.trim(),
       };
 
       final response = await http.post(

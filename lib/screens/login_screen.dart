@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 228, 227, 227),
+      backgroundColor: const Color.fromARGB(255, 249, 246, 249),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(color: Colors.white),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: Colors.pink,
                         ),
                       ),
                     ),

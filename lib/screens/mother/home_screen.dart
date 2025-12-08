@@ -418,50 +418,47 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _fetchData,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Subtitle
-                  Text(
-                    _getSubtitle(),
-                    style: const TextStyle(
-                      color: Color.fromARGB(255, 103, 109, 103),
-                      fontSize: 15,
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Subtitle
+                Text(
+                  _getSubtitle(),
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 103, 109, 103),
+                    fontSize: 15,
                   ),
-                  const SizedBox(height: 20),
+                ),
+                const SizedBox(height: 12),
 
-                  // Week Progress (only for pregnant)
-                  if (isPregnant) ...[
-                    _buildWeekProgress(),
-                    const SizedBox(height: 16),
-                  ],
+                // Week Progress (only for pregnant)
+                if (isPregnant) ...[
+                  _buildWeekProgress(),
+                  const SizedBox(height: 12),
+                ],
 
-                  // Main visual card
-                  isPregnant
+                // Main visual card - takes available space
+                Expanded(
+                  flex: 3,
+                  child: isPregnant
                       ? _buildPregnancyVisual()
                       : _buildPostnatalVisual(),
+                ),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-                  // Tracker cards
-                  isPregnant
-                      ? _buildPregnancyTracker()
-                      : _buildRecoveryTracker(),
+                // Tracker cards
+                isPregnant ? _buildPregnancyTracker() : _buildRecoveryTracker(),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-                  // Quick Actions
-                  _buildQuickActions(isPregnant),
+                // Quick Actions
+                _buildQuickActions(isPregnant),
 
-                  const SizedBox(height: 100),
-                ],
-              ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
         ),

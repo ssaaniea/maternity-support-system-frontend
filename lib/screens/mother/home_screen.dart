@@ -3,7 +3,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/screens/mother/tracking/checkup_screen.dart';
+import 'package:project_frontend/screens/mother/tracking/kick_count_screen.dart';
+import 'package:project_frontend/screens/mother/tracking/recovery_screen.dart';
+import 'package:project_frontend/screens/mother/tracking/symptom_screen.dart';
+import 'package:project_frontend/screens/mother/tracking/weight_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -185,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.red.shade100,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.emergency, color: Colors.red),
+              child: const Icon(Iconsax.danger, color: Colors.red),
             ),
             const SizedBox(width: 12),
             const Text('Emergency SOS'),
@@ -195,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.person_add, size: 48, color: Colors.grey),
+                  Icon(Iconsax.add_circle, size: 48, color: Colors.grey),
                   SizedBox(height: 12),
                   Text(
                     'No emergency contacts saved',
@@ -228,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: Text(contact['name'] ?? 'Unknown'),
                       subtitle: Text(contact['relation'] ?? ''),
                       trailing: IconButton(
-                        icon: const Icon(Icons.call, color: Colors.green),
+                        icon: const Icon(Iconsax.call, color: Colors.green),
                         onPressed: () {
                           Navigator.pop(context);
                           _callContact(contact['phone'] ?? '');
@@ -250,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Call first contact
                 _callContact(_emergencyContacts.first['phone'] ?? '');
               },
-              icon: const Icon(Icons.call),
+              icon: const Icon(Iconsax.call),
               label: const Text('Call Now'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -352,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showSOSDialog,
         backgroundColor: Colors.red,
-        child: const Icon(Icons.emergency, color: Colors.white, size: 28),
+        child: const Icon(Iconsax.danger, color: Colors.white, size: 28),
       ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -366,12 +372,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black54),
+            icon: const Icon(Iconsax.refresh, color: Colors.black54),
             onPressed: _fetchData,
           ),
           if (isPregnant)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.black54),
+              icon: const Icon(Iconsax.more, color: Colors.black54),
               onSelected: (value) {
                 if (value == 'delivered') {
                   _markAsDelivered();
@@ -382,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: 'delivered',
                   child: Row(
                     children: [
-                      Icon(Icons.child_friendly, color: Colors.pink),
+                      Icon(Iconsax.happyemoji, color: Colors.pink),
                       SizedBox(width: 8),
                       Text('Mark as Delivered'),
                     ],
@@ -448,7 +454,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? _buildPregnancyTracker()
                       : _buildRecoveryTracker(),
 
-                  // const SizedBox(height: 100),
+                  const SizedBox(height: 20),
+
+                  // Quick Actions
+                  _buildQuickActions(isPregnant),
+
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -510,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.child_care,
+                  Iconsax.happyemoji,
                   size: 80,
                   color: Colors.pink.shade200,
                 ),
@@ -613,7 +624,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 const Icon(
-                  Icons.lightbulb_outline,
+                  Iconsax.lamp_on,
                   color: Colors.amber,
                   size: 20,
                 ),
@@ -713,7 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _buildTrackerCard(
-                  icon: Icons.monitor_weight,
+                  icon: Iconsax.weight,
                   title: 'Weight',
                   value: _latestWeight != null
                       ? '${_latestWeight!.toStringAsFixed(1)} kg'
@@ -724,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTrackerCard(
-                  icon: Icons.child_care,
+                  icon: Iconsax.happyemoji,
                   title: 'Last Kicks',
                   value: _lastKickCount != null ? '$_lastKickCount' : '-',
                   bgColor: const Color(0xffeecde6),
@@ -733,7 +744,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTrackerCard(
-                  icon: Icons.sick,
+                  icon: Iconsax.health,
                   title: 'Symptoms',
                   value: _symptomCount != null ? '$_symptomCount noted' : '-',
                   bgColor: const Color(0xffeecde6),
@@ -776,7 +787,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _buildTrackerCard(
-                  icon: Icons.monitor_weight,
+                  icon: Iconsax.weight,
                   title: 'Weight',
                   value: _latestWeight != null
                       ? '${_latestWeight!.toStringAsFixed(1)} kg'
@@ -787,7 +798,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTrackerCard(
-                  icon: Icons.favorite,
+                  icon: Iconsax.heart,
                   title: 'Recovery',
                   value: 'Track',
                   bgColor: Colors.purple.shade100,
@@ -796,7 +807,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTrackerCard(
-                  icon: Icons.mood,
+                  icon: Iconsax.emoji_happy,
                   title: 'Mood',
                   value: 'Log',
                   bgColor: Colors.purple.shade100,
@@ -844,6 +855,124 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(bool isPregnant) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Quick Log",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 80, 80, 80),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionButton(
+                icon: Iconsax.weight,
+                label: "Weight",
+                color: Colors.teal,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WeightScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildQuickActionButton(
+                icon: Iconsax.health,
+                label: "Symptoms",
+                color: Colors.purple,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SymptomScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildQuickActionButton(
+                icon: isPregnant ? Iconsax.happyemoji : Iconsax.heart,
+                label: isPregnant ? "Kicks" : "Recovery",
+                color: isPregnant ? Colors.orange : Colors.red,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => isPregnant
+                        ? const KickCountScreen()
+                        : const RecoveryScreen(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildQuickActionButton(
+                icon: Iconsax.hospital,
+                label: "Checkup",
+                color: Colors.green,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CheckupScreen()),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

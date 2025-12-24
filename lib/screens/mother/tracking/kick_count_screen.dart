@@ -322,8 +322,11 @@ class _KickCountScreenState extends State<KickCountScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.check_circle,
-                                size: 18, color: Colors.green),
+                            Icon(
+                              Icons.check_circle,
+                              size: 18,
+                              color: Colors.green,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Keep It Up!',
@@ -641,8 +644,9 @@ class _KickCountScreenState extends State<KickCountScreen> {
                       final log = _logs[index];
                       // Calculate duration from actual timestamps (most accurate)
                       // This works even for old logs without stored duration_seconds
-                      final durationSeconds =
-                          log.date.difference(log.startTime).inSeconds;
+                      final durationSeconds = log.date
+                          .difference(log.startTime)
+                          .inSeconds;
                       final notes = KickCountGuidance.getKickCountNotes(
                         log.kickCount,
                         durationSeconds,
@@ -699,13 +703,16 @@ class _KickCountScreenState extends State<KickCountScreen> {
                                       const SizedBox(height: 4),
                                       Chip(
                                         label: Text(
-                                          notes.status == KickCountStatus.excellent
+                                          notes.status ==
+                                                  KickCountStatus.excellent
                                               ? 'Excellent'
-                                              : notes.status == KickCountStatus.good
-                                                  ? 'Good'
-                                                  : notes.status == KickCountStatus.monitor
-                                                      ? 'Monitor'
-                                                      : 'Concerning',
+                                              : notes.status ==
+                                                    KickCountStatus.good
+                                              ? 'Good'
+                                              : notes.status ==
+                                                    KickCountStatus.monitor
+                                              ? 'Monitor'
+                                              : 'Concerning',
                                           style: const TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,

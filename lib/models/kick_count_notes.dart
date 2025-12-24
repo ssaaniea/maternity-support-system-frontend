@@ -87,7 +87,7 @@ class KickCountGuidance {
   static double _normalizeKicks(int kickCount, int durationSeconds) {
     // Handle edge case: if duration is 0, return 0
     if (durationSeconds <= 0) return 0;
-    
+
     // Normalize to 2-hour (7200 second) standard
     // If 10 kicks in 10 seconds: (10 / 10) * 7200 = 7200 (Excellent!)
     // If 10 kicks in 60 seconds: (10 / 60) * 7200 = 1200 (Excellent!)

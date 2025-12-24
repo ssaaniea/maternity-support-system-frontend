@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/models/tracking_models.dart';
+import 'package:project_frontend/models/kick_count_notes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class KickCountScreen extends StatefulWidget {
@@ -25,6 +27,25 @@ class _KickCountScreenState extends State<KickCountScreen> {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
 
+  // New session features
+  int _selectedIntensity = 3; // Default to medium intensity (1-5 scale)
+  Set<String> _selectedContextTags = {}; // Context tags
+  final TextEditingController _diaryNotesController = TextEditingController();
+
+  // Available context tags for filtering/contextualizing kicks
+  static const List<String> availableContextTags = [
+    'After Meal',
+    'Before Sleep',
+    'Cold Drink',
+    'Morning',
+    'Afternoon',
+    'Evening',
+    'Exercise',
+    'Resting',
+    'Happy Moment',
+    'Music Playing',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +55,7 @@ class _KickCountScreenState extends State<KickCountScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _diaryNotesController.dispose();
     super.dispose();
   }
 
@@ -90,6 +112,9 @@ class _KickCountScreenState extends State<KickCountScreen> {
 
   void _incrementKick() {
     if (_isSessionActive) {
+      // Haptic feedback on every kick
+      HapticFeedback.lightImpact();
+
       setState(() {
         _currentKicks++;
       });
@@ -98,7 +123,8 @@ class _KickCountScreenState extends State<KickCountScreen> {
 
   Future<void> _finishSession() async {
     _timer?.cancel();
-    final durationMinutes = _elapsed.inMinutes;
+    final durationSeconds = _elapsed.inSeconds;
+    final durationMinutes = (durationSeconds / 60).toInt();
 
     // Save to backend
     try {
@@ -118,19 +144,30 @@ class _KickCountScreenState extends State<KickCountScreen> {
           "start_time": _startTime!.toIso8601String(),
           "kick_count": _currentKicks,
           "duration_minutes": durationMinutes,
+          "duration_seconds": durationSeconds,
           "notes": "Session finished",
+          "average_intensity": _selectedIntensity,
+          "context_tags": _selectedContextTags.toList(),
+          "diary_notes": _diaryNotesController.text.isNotEmpty
+              ? _diaryNotesController.text
+              : null,
         }),
       );
 
       if (response.statusCode == 201) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Session saved!")),
-          );
+          _fetchKickCounts();
+          _resetSession();
+          // Show kick count results with guidance notes - pass duration in seconds for accurate calculation
+          _showKickCountResults(_currentKicks, durationSeconds);
         }
-        _fetchKickCounts();
       } else {
         print("Failed to save kick session: ${response.body}");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to save session")),
+          );
+        }
       }
     } catch (e) {
       print("Error saving kick session: $e");
@@ -140,6 +177,328 @@ class _KickCountScreenState extends State<KickCountScreen> {
       _isSessionActive = false;
       _currentKicks = 0;
       _elapsed = Duration.zero;
+    });
+  }
+
+  void _showKickCountResults(int kickCount, int durationSeconds) {
+    final notes = KickCountGuidance.getKickCountNotes(
+      kickCount,
+      durationSeconds,
+      pregnancyWeek: 28,
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Column(
+            children: [
+              Text(
+                notes.icon,
+                style: const TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                notes.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Summary stats
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(notes.status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            '$kickCount',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Text(
+                            'Kicks',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        height: 40,
+                        width: 1,
+                        color: Colors.grey.shade300,
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            (durationSeconds / 60).toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Text(
+                            'Minutes',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Message
+                Text(
+                  notes.message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Additional tips if status is concerning or monitor
+                if (notes.status == KickCountStatus.concerning ||
+                    notes.status == KickCountStatus.monitor) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.info, size: 18, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Text(
+                              'Pro Tip',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Every baby has unique patterns. If you\'re concerned about any changes from what\'s normal for YOUR baby, contact your healthcare provider.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle,
+                                size: 18, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text(
+                              'Keep It Up!',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Continue monitoring daily at the same time. Your awareness of normal patterns is the best health tool!',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Close'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showKickCountingGuidance();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Learn More'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Color _getStatusColor(KickCountStatus status) {
+    switch (status) {
+      case KickCountStatus.excellent:
+      case KickCountStatus.good:
+        return Colors.green;
+      case KickCountStatus.monitor:
+        return Colors.orange;
+      case KickCountStatus.concerning:
+        return Colors.red;
+    }
+  }
+
+  IconData _getStatusIcon(KickCountStatus status) {
+    switch (status) {
+      case KickCountStatus.excellent:
+      case KickCountStatus.good:
+        return Icons.check_circle;
+      case KickCountStatus.monitor:
+        return Icons.schedule;
+      case KickCountStatus.concerning:
+        return Icons.warning;
+    }
+  }
+
+  void _showKickCountResultsFromLog(int kickCount, int durationSeconds) {
+    _showKickCountResults(kickCount, durationSeconds);
+  }
+
+  void _showKickCountingGuidance() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (BuildContext context, ScrollController scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: ListView(
+                controller: scrollController,
+                children: [
+                  const Text(
+                    'Kick Counting Guide',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGuidanceSection(
+                    'About Fetal Movements',
+                    KickCountGuidance.kickCountFeels,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildGuidanceSection(
+                    'Kick Counting Tips',
+                    KickCountGuidance.kickCountingTips,
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Remember:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'You know your baby best. Trust your instincts and always feel comfortable reaching out to your healthcare provider with any concerns about fetal movement.',
+                          style: TextStyle(height: 1.6),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildGuidanceSection(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          content,
+          style: const TextStyle(
+            fontSize: 13,
+            height: 1.8,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _resetSession() {
+    setState(() {
+      _selectedIntensity = 3;
+      _selectedContextTags.clear();
+      _diaryNotesController.clear();
     });
   }
 
@@ -280,19 +639,95 @@ class _KickCountScreenState extends State<KickCountScreen> {
                     itemCount: _logs.length,
                     itemBuilder: (context, index) {
                       final log = _logs[index];
+                      // Calculate duration from actual timestamps (most accurate)
+                      // This works even for old logs without stored duration_seconds
+                      final durationSeconds =
+                          log.date.difference(log.startTime).inSeconds;
+                      final notes = KickCountGuidance.getKickCountNotes(
+                        log.kickCount,
+                        durationSeconds,
+                      );
+                      final statusColor = _getStatusColor(notes.status);
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: ListTile(
-                          leading: const CircleAvatar(
-                            backgroundColor: Colors.orange,
-                            child: Icon(Icons.child_care, color: Colors.white),
-                          ),
-                          title: Text("${log.kickCount} kicks"),
-                          subtitle: Text(
-                            "${log.date.day}/${log.date.month} • ${log.durationMinutes ?? 0} mins",
+                        child: InkWell(
+                          onTap: () {
+                            _showKickCountResultsFromLog(
+                              log.kickCount,
+                              durationSeconds,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: statusColor.withOpacity(0.2),
+                                  child: Icon(
+                                    _getStatusIcon(notes.status),
+                                    color: statusColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "${log.kickCount} kicks",
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${log.date.day}/${log.date.month}/${log.date.year} • ${log.durationMinutes ?? 0} mins",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Chip(
+                                        label: Text(
+                                          notes.status == KickCountStatus.excellent
+                                              ? 'Excellent'
+                                              : notes.status == KickCountStatus.good
+                                                  ? 'Good'
+                                                  : notes.status == KickCountStatus.monitor
+                                                      ? 'Monitor'
+                                                      : 'Concerning',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        backgroundColor: statusColor,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );

@@ -70,7 +70,11 @@ class KickCountLog {
   final DateTime startTime;
   final int kickCount;
   final int? durationMinutes;
+  final int? durationSeconds; // Store actual seconds for accurate calculations
   final String? notes;
+  final int? averageIntensity; // 1-5 scale
+  final List<String> contextTags; // Tags like 'After Meal', 'Cold Drink', etc.
+  final String? diaryNotes; // Personal notes about the session
 
   KickCountLog({
     this.id,
@@ -78,7 +82,11 @@ class KickCountLog {
     required this.startTime,
     required this.kickCount,
     this.durationMinutes,
+    this.durationSeconds,
     this.notes,
+    this.averageIntensity,
+    this.contextTags = const [],
+    this.diaryNotes,
   });
 
   factory KickCountLog.fromJson(Map<String, dynamic> json) {
@@ -88,7 +96,11 @@ class KickCountLog {
       startTime: DateTime.parse(json['start_time']),
       kickCount: json['kick_count'],
       durationMinutes: json['duration_minutes'],
+      durationSeconds: json['duration_seconds'],
       notes: json['notes'],
+      averageIntensity: json['average_intensity'],
+      contextTags: List<String>.from(json['context_tags'] ?? []),
+      diaryNotes: json['diary_notes'],
     );
   }
 
@@ -98,7 +110,11 @@ class KickCountLog {
       'start_time': startTime.toIso8601String(),
       'kick_count': kickCount,
       'duration_minutes': durationMinutes,
+      'duration_seconds': durationSeconds,
       'notes': notes,
+      'average_intensity': averageIntensity,
+      'context_tags': contextTags,
+      'diary_notes': diaryNotes,
     };
   }
 }
@@ -161,7 +177,3 @@ class CheckupLog {
     };
   }
 }
-
-
-         
-         

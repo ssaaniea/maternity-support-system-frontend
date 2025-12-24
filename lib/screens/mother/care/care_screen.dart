@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/constants.dart';
-import 'package:project_frontend/screens/mother/caregiver_details_screen.dart';
-import 'package:project_frontend/screens/mother/caregiver_list_screen.dart';
+import 'package:project_frontend/screens/mother/care/caregiver_details_screen.dart';
+import 'package:project_frontend/screens/mother/care/caregiver_list_screen.dart';
+import 'package:project_frontend/screens/mother/care/doctor_details_screen.dart';
 import 'package:project_frontend/widgets/tracking_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -52,8 +53,9 @@ class _CareScreenState extends State<CareScreen> {
       );
       if (contactsRes.statusCode == 200) {
         final data = jsonDecode(contactsRes.body);
-        _emergencyContacts =
-            List<Map<String, dynamic>>.from(data['data'] ?? []);
+        _emergencyContacts = List<Map<String, dynamic>>.from(
+          data['data'] ?? [],
+        );
       }
 
       // Fetch caregivers
@@ -105,7 +107,10 @@ class _CareScreenState extends State<CareScreen> {
   }
 
   Future<void> _addEmergencyContact(
-      String name, String phone, String relation) async {
+    String name,
+    String phone,
+    String relation,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString("jwt_token");
@@ -220,8 +225,11 @@ class _CareScreenState extends State<CareScreen> {
                         color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child:
-                          const Icon(Iconsax.user_add, color: Colors.red, size: 24),
+                      child: const Icon(
+                        Iconsax.user_add,
+                        color: Colors.red,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -272,7 +280,9 @@ class _CareScreenState extends State<CareScreen> {
                           final isSelected = selectedRelation == r['name'];
                           return GestureDetector(
                             onTap: () {
-                              setModalState(() => selectedRelation = r['name']!);
+                              setModalState(
+                                () => selectedRelation = r['name']!,
+                              );
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -285,16 +295,19 @@ class _CareScreenState extends State<CareScreen> {
                                     : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color:
-                                      isSelected ? Colors.red : Colors.transparent,
+                                  color: isSelected
+                                      ? Colors.red
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(r['icon']!,
-                                      style: const TextStyle(fontSize: 18)),
+                                  Text(
+                                    r['icon']!,
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     r['name']!.toUpperCase(),
@@ -338,7 +351,8 @@ class _CareScreenState extends State<CareScreen> {
                           phoneController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text("Please fill in all fields")),
+                            content: Text("Please fill in all fields"),
+                          ),
                         );
                         return;
                       }
@@ -393,6 +407,7 @@ class _CareScreenState extends State<CareScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Iconsax.refresh),
@@ -463,7 +478,11 @@ class _CareScreenState extends State<CareScreen> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Iconsax.danger, color: Colors.white, size: 28),
+                child: const Icon(
+                  Iconsax.danger,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
@@ -731,96 +750,100 @@ class _CareScreenState extends State<CareScreen> {
         );
       },
       child: Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.purple.shade100,
-                child: Text(
-                  (caregiver['name'] ?? 'U')[0].toUpperCase(),
+        width: 160,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.purple.shade100,
+                  child: Text(
+                    (caregiver['name'] ?? 'U')[0].toUpperCase(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (shiftColors[caregiver['shift']] ?? Colors.grey)
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    caregiver['shift']?.toString().toUpperCase() ?? '',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: shiftColors[caregiver['shift']] ?? Colors.grey,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              caregiver['name'] ?? 'Unknown',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "${caregiver['experience_years'] ?? 0} yrs exp",
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 12,
+              ),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                const Icon(Iconsax.star1, size: 14, color: Colors.amber),
+                const SizedBox(width: 4),
+                Text(
+                  "${(caregiver['rating'] ?? 0).toStringAsFixed(1)}",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.purple,
+                    fontSize: 12,
                   ),
                 ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (shiftColors[caregiver['shift']] ?? Colors.grey)
-                      .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  caregiver['shift']?.toString().toUpperCase() ?? '',
-                  style: TextStyle(
-                    fontSize: 10,
+                const Spacer(),
+                Text(
+                  "₹${caregiver['amount'] ?? 0}",
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: shiftColors[caregiver['shift']] ?? Colors.grey,
+                    fontSize: 14,
+                    color: Colors.green,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            caregiver['name'] ?? 'Unknown',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+              ],
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "${caregiver['experience_years'] ?? 0} yrs exp",
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
-            ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              const Icon(Iconsax.star1, size: 14, color: Colors.amber),
-              const SizedBox(width: 4),
-              Text(
-                "${(caregiver['rating'] ?? 0).toStringAsFixed(1)}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                "₹${caregiver['amount'] ?? 0}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.green,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -877,62 +900,75 @@ class _CareScreenState extends State<CareScreen> {
   }
 
   Widget _buildDoctorCard(Map<String, dynamic> doctor) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DoctorDetailsScreen(doctor: doctor),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              shape: BoxShape.circle,
+        );
+      },
+      child: Container(
+        width: 150,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(Iconsax.health, color: Colors.blue.shade400, size: 24),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            doctor['name'] ?? 'Unknown',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Iconsax.health,
+                color: Colors.blue.shade400,
+                size: 24,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            doctor['specialised'] ?? 'General',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
+            const SizedBox(height: 12),
+            Text(
+              doctor['name'] ?? 'Unknown',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const Spacer(),
-          Text(
-            doctor['degree'] ?? '',
-            style: TextStyle(
-              color: Colors.blue.shade700,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 4),
+            Text(
+              doctor['specialised'] ?? 'General',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+            const Spacer(),
+            Text(
+              doctor['degree'] ?? '',
+              style: TextStyle(
+                color: Colors.blue.shade700,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -957,7 +993,63 @@ class _CareScreenState extends State<CareScreen> {
     );
   }
 
+  Widget _detailRow(
+    String label,
+    String? value, {
+    bool isBold = false,
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value ?? "-",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                color: valueColor ?? Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String formatDate(String? iso) {
+    if (iso == null) return "-";
+    final d = DateTime.parse(iso).toLocal();
+    return "${d.day}/${d.month}/${d.year}";
+  }
+
+  Color _statusColor(String? status) {
+    switch (status) {
+      case 'pending':
+        return Colors.orange;
+      case 'accepted':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+      case 'rejected':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildBookingCard(Map<String, dynamic> booking) {
+    print(booking);
     final statusColors = {
       'pending': Colors.orange,
       'accepted': Colors.blue,
@@ -968,72 +1060,186 @@ class _CareScreenState extends State<CareScreen> {
 
     final caregiver = booking['caregiver'] as Map<String, dynamic>? ?? {};
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    // I/flutter (13938): {
+    //_id: 6936b5cd8493ab830d067bce,
+    //mother: 69368b4eb50aa2032c55f30a,
+    //caregiver: {rating: 0, _id: 68b7d95450fc790165692a1e, name: abc, shift: wholeday, amount: 2000},
+    //start_date: 2025-12-09T18:30:00.000Z,
+    //end_date: 2025-12-12T18:30:00.000Z,
+    //shift: wholeday,
+    //accommodation: with_food,
+    //total_amount : 8000,
+    //status: pending,
+    //address: home,
+    //notes: hi,
+    //createdAt: 2025-12-08T11:26:05.917Z,
+    //updatedAt: 2025-12-08T11:26:05.917Z, __v: 0}
+    // Reloaded 1 of 985 libraries in 1,588ms (compile: 110 ms, reload: 560 ms, reassemble: 402 ms).
+
+    return InkWell(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.purple.shade100,
-            child: Text(
-              (caregiver['name'] ?? 'U')[0].toUpperCase(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
+          builder: (context) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      "Booking Details",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    _detailRow("Caregiver", caregiver['name']),
+                    _detailRow("Rating", caregiver['rating']?.toString()),
+                    _detailRow("Caregiver Shift", caregiver['shift']),
+                    _detailRow("Daily Amount", "₹${caregiver['amount']}"),
+
+                    const Divider(height: 30),
+
+                    _detailRow("Start Date", formatDate(booking['start_date'])),
+                    _detailRow("End Date", formatDate(booking['end_date'])),
+                    _detailRow("Shift", booking['shift']),
+                    _detailRow(
+                      "Accommodation",
+                      booking['accommodation']?.toString().replaceAll("_", " "),
+                    ),
+
+                    const Divider(height: 30),
+
+                    _detailRow(
+                      "Total Amount",
+                      "₹${booking['total_amount']}",
+                      isBold: true,
+                    ),
+                    _detailRow(
+                      "Status",
+                      booking['status'],
+                      valueColor: _statusColor(booking['status']),
+                    ),
+
+                    const Divider(height: 30),
+
+                    _detailRow("Address", booking['address']),
+                    _detailRow("Notes", booking['notes']),
+
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          "Close",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.purple.shade100,
+              child: Text(
+                (caregiver['name'] ?? 'U')[0].toUpperCase(),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  caregiver['name'] ?? 'Caregiver',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    caregiver['name'] ?? 'Caregiver',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  booking['shift']?.toString().toUpperCase() ?? '',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
+                  const SizedBox(height: 2),
+                  Text(
+                    booking['shift']?.toString().toUpperCase() ?? '',
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: (statusColors[booking['status']] ?? Colors.grey)
-                  .withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              booking['status']?.toString().toUpperCase() ?? '',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: statusColors[booking['status']] ?? Colors.grey,
+                ],
               ),
             ),
-          ),
-        ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: (statusColors[booking['status']] ?? Colors.grey)
+                    .withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                booking['status']?.toString().toUpperCase() ?? '',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: statusColors[booking['status']] ?? Colors.grey,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

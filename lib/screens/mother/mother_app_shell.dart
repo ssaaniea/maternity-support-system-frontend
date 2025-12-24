@@ -1,27 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:project_frontend/screens/mother/care_screen.dart';
+import 'package:project_frontend/screens/mother/care/care_screen.dart';
+import 'package:project_frontend/screens/mother/explore/explore_screen.dart';
 import 'package:project_frontend/screens/mother/home_screen.dart';
-import 'package:project_frontend/screens/mother/profile_screen.dart';
-import 'package:project_frontend/screens/mother/tracking_screen.dart';
+import 'package:project_frontend/screens/mother/profile/profile_screen.dart';
+import 'package:project_frontend/screens/mother/tracking/tracking_screen.dart';
 
 class MotherAppShell extends StatefulWidget {
-  const MotherAppShell({super.key});
+  final int initialTabIndex;
+
+  const MotherAppShell({super.key, this.initialTabIndex = 0});
 
   @override
   State<MotherAppShell> createState() => _MotherAppShellState();
+
+  /// Navigate to a specific tab from anywhere in the app
+  static void switchToTab(BuildContext context, int tabIndex) {
+    // Find the MotherAppShell in the widget tree
+    final state = context.findAncestorStateOfType<_MotherAppShellState>();
+    if (state != null) {
+      state._switchTab(tabIndex);
+    } else {
+      // If MotherAppShell is not in the widget tree, navigate to it
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => MotherAppShell(initialTabIndex: tabIndex),
+        ),
+        (route) => false,
+      );
+    }
+  }
 }
 
 class _MotherAppShellState extends State<MotherAppShell> {
-  int _bottomNavIndex = 0;
+  late int _bottomNavIndex;
 
   final List<Widget> _screens = const [
     HomeScreen(),
     TrackingScreen(),
-    HomeScreen(), // Explore placeholder
+    ExploreScreen(),
     CareScreen(),
     ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _bottomNavIndex = widget.initialTabIndex;
+  }
+
+  void _switchTab(int index) {
+    setState(() => _bottomNavIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +101,7 @@ class _MotherAppShellState extends State<MotherAppShell> {
                 _buildNavItem(
                   index: 4,
                   icon: Iconsax.user,
-                  activeIcon: Iconsax.user5,
+                  activeIcon: Iconsax.user,
                   label: "Profile",
                 ),
               ],

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/screens/mother/explore/article_details_screem.dart';
 import 'package:project_frontend/screens/mother/explore/widgets/article_list_card.dart';
@@ -88,24 +89,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-
-      final headers = {
-        "Content-Type": "application/json",
-        if (token != null) "Authorization": "Bearer $token",
-      };
-
       // Fetch all data in parallel for better performance
       final results = await Future.wait([
-        http.get(Uri.parse('$kBaseRoute/article/categories'), headers: headers),
-        http.get(Uri.parse('$kBaseRoute/article/featured'), headers: headers),
-        _fetchArticlesRequest(headers),
+        ApiService().get('/article/categories'),
+        ApiService().get('/article/featured'),
+        ApiService().get('/article'),
       ]);
 
       // Process categories
       if (results[0].statusCode == 200) {
-        final data = jsonDecode(results[0].body) as List;
+        final data = results[0].data as List;
         _categories = List<Map<String, dynamic>>.from(data);
 
         // Build category name cache
@@ -117,13 +110,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
       // Process featured
       if (results[1].statusCode == 200) {
-        final data = jsonDecode(results[1].body) as List;
+        final data = results[1].data as List;
         _featuredArticles = List<Map<String, dynamic>>.from(data);
       }
 
       // Process articles
       if (results[2].statusCode == 200) {
-        final data = jsonDecode(results[2].body) as List;
+        final data = results[2].data as List;
         _allArticles = List<Map<String, dynamic>>.from(data);
       }
 
@@ -161,18 +154,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Future<void> _fetchArticles() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-
-      final headers = {
-        "Content-Type": "application/json",
-        if (token != null) "Authorization": "Bearer $token",
-      };
-
-      final response = await _fetchArticlesRequest(headers);
+      final response = await ApiService().get('/article');
 
       if (response.statusCode == 200 && mounted) {
-        final data = jsonDecode(response.body) as List;
+        final data = response.data as List;
         setState(() {
           _allArticles = List<Map<String, dynamic>>.from(data);
         });

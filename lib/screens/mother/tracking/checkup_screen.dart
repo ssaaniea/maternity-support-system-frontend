@@ -141,210 +141,220 @@ class _CheckupScreenState extends State<CheckupScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.9,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        builder: (context, setModalState) => Padding(
+          // Add padding for keyboard
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+          child: Container(
+            // Use constraints instead of fixed height
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Iconsax.hospital,
-                        color: Colors.green,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Text(
-                        "Log Checkup",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Iconsax.close_circle),
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
-              Divider(color: Colors.grey[200], height: 1),
-              // Content
-              Expanded(
-                child: SingleChildScrollView(
+                // Header
+                Container(
                   padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      // Date section
-                      const TrackingSectionHeader(
-                        title: "Appointment Details",
-                        icon: Iconsax.calendar,
-                      ),
-                      TrackingDateField(
-                        label: "Checkup Date",
-                        selectedDate: selectedDate,
-                        icon: Iconsax.calendar_1,
-                        onDateSelected: (date) {
-                          setModalState(() => selectedDate = date);
-                        },
-                      ),
-                      TrackingDateField(
-                        label: "Next Checkup Date (Optional)",
-                        selectedDate: nextCheckupDate,
-                        icon: Iconsax.calendar_tick,
-                        firstDate: DateTime.now(),
-                        onDateSelected: (date) {
-                          setModalState(() => nextCheckupDate = date);
-                        },
-                      ),
-
-                      const TrackingSectionHeader(
-                        title: "Doctor & Location",
-                        icon: Iconsax.user_octagon,
-                      ),
-                      TrackingTextField(
-                        controller: doctorController,
-                        label: "Doctor Name",
-                        icon: Iconsax.user,
-                        hint: "e.g., Dr. Smith",
-                      ),
-                      TrackingTextField(
-                        controller: hospitalController,
-                        label: "Hospital / Clinic",
-                        icon: Iconsax.hospital,
-                        hint: "e.g., City Hospital",
-                      ),
-
-                      const TrackingSectionHeader(
-                        title: "Health Measurements",
-                        icon: Iconsax.health,
-                      ),
-                      TrackingRowFields(
-                        left: TrackingTextField(
-                          controller: weightController,
-                          label: "Weight",
-                          suffix: "kg",
-                          keyboardType: TextInputType.number,
-                          icon: Iconsax.weight,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        right: TrackingTextField(
-                          controller: bpController,
-                          label: "Blood Pressure",
-                          hint: "e.g., 120/80",
-                          icon: Iconsax.activity,
+                        child: const Icon(
+                          Iconsax.hospital,
+                          color: Colors.green,
+                          size: 24,
                         ),
                       ),
-                      TrackingTextField(
-                        controller: heartRateController,
-                        label: "Baby Heart Rate",
-                        suffix: "bpm",
-                        keyboardType: TextInputType.number,
-                        icon: Iconsax.heart,
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          "Log Checkup",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-
-                      const TrackingSectionHeader(
-                        title: "Notes",
-                        icon: Iconsax.note_1,
-                      ),
-                      TrackingTextField(
-                        controller: notesController,
-                        label: "Additional Notes",
-                        hint: "Any observations or recommendations...",
-                        maxLines: 3,
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Iconsax.close_circle),
+                        color: Colors.grey,
                       ),
                     ],
                   ),
                 ),
-              ),
-              // Save button
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (doctorController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter doctor name"),
-                          ),
-                        );
-                        return;
-                      }
+                Divider(color: Colors.grey[200], height: 1),
+                // Content - Flexible to allow shrinking when keyboard appears
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Date section
+                        const TrackingSectionHeader(
+                          title: "Appointment Details",
+                          icon: Iconsax.calendar,
+                        ),
+                        TrackingDateField(
+                          label: "Checkup Date",
+                          selectedDate: selectedDate,
+                          icon: Iconsax.calendar_1,
+                          onDateSelected: (date) {
+                            setModalState(() => selectedDate = date);
+                          },
+                        ),
+                        TrackingDateField(
+                          label: "Next Checkup Date (Optional)",
+                          selectedDate: nextCheckupDate,
+                          icon: Iconsax.calendar_tick,
+                          firstDate: DateTime.now(),
+                          onDateSelected: (date) {
+                            setModalState(() => nextCheckupDate = date);
+                          },
+                        ),
 
-                      _addCheckup(
-                        date: selectedDate,
-                        doctorName: doctorController.text,
-                        hospitalName: hospitalController.text,
-                        weight: double.tryParse(weightController.text),
-                        bp: bpController.text.isNotEmpty
-                            ? bpController.text
-                            : null,
-                        heartRate: int.tryParse(heartRateController.text),
-                        notes: notesController.text.isNotEmpty
-                            ? notesController.text
-                            : null,
-                        nextCheckupDate: nextCheckupDate,
-                      );
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
+                        const TrackingSectionHeader(
+                          title: "Doctor & Location",
+                          icon: Iconsax.user_octagon,
+                        ),
+                        TrackingTextField(
+                          controller: doctorController,
+                          label: "Doctor Name",
+                          icon: Iconsax.user,
+                          hint: "e.g., Dr. Smith",
+                        ),
+                        TrackingTextField(
+                          controller: hospitalController,
+                          label: "Hospital / Clinic",
+                          icon: Iconsax.hospital,
+                          hint: "e.g., City Hospital",
+                        ),
+
+                        const TrackingSectionHeader(
+                          title: "Health Measurements",
+                          icon: Iconsax.health,
+                        ),
+                        TrackingRowFields(
+                          left: TrackingTextField(
+                            controller: weightController,
+                            label: "Weight",
+                            suffix: "kg",
+                            keyboardType: TextInputType.number,
+                            icon: Iconsax.weight,
+                          ),
+                          right: TrackingTextField(
+                            controller: bpController,
+                            label: "Blood Pressure",
+                            hint: "e.g., 120/80",
+                            icon: Iconsax.activity,
+                          ),
+                        ),
+                        TrackingTextField(
+                          controller: heartRateController,
+                          label: "Baby Heart Rate",
+                          suffix: "bpm",
+                          keyboardType: TextInputType.number,
+                          icon: Iconsax.heart,
+                        ),
+
+                        const TrackingSectionHeader(
+                          title: "Notes",
+                          icon: Iconsax.note_1,
+                        ),
+                        TrackingTextField(
+                          controller: notesController,
+                          label: "Additional Notes",
+                          hint: "Any observations or recommendations...",
+                          maxLines: 3,
+                        ),
+                      ],
                     ),
-                    child: const Text(
-                      "Save Checkup",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  ),
+                ),
+                // Save button
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (doctorController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please enter doctor name"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        _addCheckup(
+                          date: selectedDate,
+                          doctorName: doctorController.text,
+                          hospitalName: hospitalController.text,
+                          weight: double.tryParse(weightController.text),
+                          bp: bpController.text.isNotEmpty
+                              ? bpController.text
+                              : null,
+                          heartRate: int.tryParse(heartRateController.text),
+                          notes: notesController.text.isNotEmpty
+                              ? notesController.text
+                              : null,
+                          nextCheckupDate: nextCheckupDate,
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Save Checkup",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -368,9 +378,12 @@ class _CheckupScreenState extends State<CheckupScreen> {
         onPressed: _showAddDialog,
         label: const Text(
           "Log Checkup",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        icon: const Icon(Iconsax.add),
+        icon: const Icon(
+          Iconsax.add,
+          color: Colors.white,
+        ),
         backgroundColor: Colors.green,
       ),
       body: _isLoading

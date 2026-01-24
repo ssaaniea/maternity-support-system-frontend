@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:project_frontend/constants.dart';
-import 'package:project_frontend/screens/mother/home_screen.dart';
+import 'package:project_frontend/screens/caregiver/caregiver_app_shell.dart';
 import 'package:project_frontend/screens/mother/mother_app_shell.dart';
 import 'package:project_frontend/screens/signup_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -188,10 +188,11 @@ class _LoginScreenState extends State<LoginScreen> {
             (r) => false,
           );
         } else if (role == 'caregiver') {
-          // TODO: replace with your caregiver screen
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute<void>(builder: (context) => const Placeholder()),
+            MaterialPageRoute<void>(
+              builder: (context) => const CaregiverAppShell(),
+            ),
             (r) => false,
           );
         }

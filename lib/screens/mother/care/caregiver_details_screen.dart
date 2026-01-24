@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/widgets/tracking_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,17 +47,9 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
 
     setState(() => _isBooking = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-      if (token == null) return;
-
-      final response = await http.post(
-        Uri.parse('$kBaseRoute/caregiver-booking/create'),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService().post(
+        '/caregiver-booking/create',
+        body: {
           "caregiver_id": widget.caregiver['_id'],
           "start_date": _startDate!.toIso8601String(),
           "end_date": _endDate!.toIso8601String(),
@@ -65,7 +58,7 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
           "total_amount": _calculateTotal(),
           "address": _addressController.text,
           "notes": _notesController.text,
-        }),
+        },
       );
 
       if (response.statusCode == 201) {
@@ -79,7 +72,7 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
           Navigator.pop(context); // Close details/booking screen
         }
       } else {
-        final error = jsonDecode(response.body);
+        final error = jsonDecode(response.data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -181,8 +174,11 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Iconsax.star1,
-                                    size: 18, color: Colors.amber[700]),
+                                Icon(
+                                  Iconsax.star1,
+                                  size: 18,
+                                  color: Colors.amber[700],
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "${c['rating']?.toStringAsFixed(1) ?? '0.0'} (${c['total_reviews'] ?? 0} reviews)",
@@ -263,13 +259,19 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  _buildDetailRow(Iconsax.money, "Price",
-                      "₹${c['amount']}/day"),
+                  _buildDetailRow(
+                    Iconsax.money,
+                    "Price",
+                    "₹${c['amount']}/day",
+                  ),
                   const SizedBox(height: 12),
                   _buildDetailRow(Iconsax.call, "Contact", "${c['phone_no']}"),
                   const SizedBox(height: 12),
-                  _buildDetailRow(Iconsax.verify, "Status",
-                      c['isApproved'] == true ? "Verified" : "Pending"),
+                  _buildDetailRow(
+                    Iconsax.verify,
+                    "Status",
+                    c['isApproved'] == true ? "Verified" : "Pending",
+                  ),
                 ],
               ),
             ),
@@ -398,7 +400,9 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
                         icon: Iconsax.location,
                       ),
                       const TrackingSectionHeader(
-                          title: "Accommodation", icon: Iconsax.home),
+                        title: "Accommodation",
+                        icon: Iconsax.home,
+                      ),
                       DropdownButtonFormField<String>(
                         value: _accommodation,
                         decoration: InputDecoration(
@@ -439,7 +443,9 @@ class _CaregiverDetailsScreenState extends State<CaregiverDetailsScreen> {
                         decoration: BoxDecoration(
                           color: Colors.pink.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.pink.withOpacity(0.2)),
+                          border: Border.all(
+                            color: Colors.pink.withOpacity(0.2),
+                          ),
                         ),
                         child: Column(
                           children: [

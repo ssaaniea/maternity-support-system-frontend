@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/screens/mother/mother_app_shell.dart';
 import 'package:project_frontend/screens/mother/tracking/checkup_screen.dart';
 import 'package:project_frontend/screens/mother/tracking/kick_count_screen.dart';
@@ -16,33 +17,23 @@ import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project_frontend/screens/mother/profile/edit_profile_screen.dart';
+import 'package:project_frontend/screens/mother/profile/mark_delivery_dialog.dart';
+import 'package:project_frontend/screens/mother/baby/baby_dashboard.dart';
 import 'package:project_frontend/screens/mother/support/help_center_screen.dart';
 import 'package:project_frontend/screens/mother/support/privacy_policy_screen.dart';
 import 'package:project_frontend/screens/mother/support/terms_of_service_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:project_frontend/providers/user_stage_provider.dart';
 
 class MotherService {
-  static Future<Map<String, String>> _getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("jwt_token");
-
-    return {
-      "Content-Type": "application/json",
-      if (token != null) "Authorization": "Bearer $token",
-    };
-  }
-
   static Future<Map<String, dynamic>?> getProfile() async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$kBaseRoute/mother/me/profile'),
-        headers: headers,
-      );
+      final response = await ApiService().get('/mother/me/profile');
 
       log('Profile Response Status: ${response.statusCode}');
-      log('Profile data: ${response.body}');
+      log('Profile data: ${response.data}');
       if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
+        final decoded = response.data;
         log('Decoded response: $decoded');
         // Extract the nested data from the response
         if (decoded is Map && decoded.containsKey('data')) {
@@ -59,7 +50,7 @@ class MotherService {
         log('Profile not found (404)');
         return null;
       }
-      log('Failed to load profile: ${response.statusCode}, ${response.body}');
+      log('Failed to load profile: ${response.statusCode}, ${response.data}');
     } catch (e) {
       log('Error fetching profile: $e');
       rethrow;
@@ -69,11 +60,9 @@ class MotherService {
 
   static Future<bool> updateProfile(Map<String, dynamic> data) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('$kBaseRoute/mother/me/profile'),
-        headers: headers,
-        body: jsonEncode(data),
+      final response = await ApiService().put(
+        '/mother/me/profile',
+        body: data,
       );
 
       return response.statusCode == 200;
@@ -138,8 +127,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final week = _profileData!['pregnancy_week'];
       return 'Pregnancy • Week ${week ?? '??'}';
     } else if (status == 'delivered') {
-      final days = _profileData!['daysSinceDelivery'];
-      return 'Postpartum • Day ${days ?? '??'}';
+      // Calculate days since delivery from actual_delivery_date
+      final deliveryDateStr = _profileData!['actual_delivery_date'];
+      if (deliveryDateStr != null) {
+        final deliveryDate = DateTime.tryParse(deliveryDateStr);
+        if (deliveryDate != null) {
+          final days = DateTime.now().difference(deliveryDate).inDays;
+          return 'Postpartum • Day $days';
+        }
+      }
+      return 'Postpartum';
     }
     return '';
   }
@@ -151,78 +148,194 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Mark as delivered
-  Future<void> _markAsDelivered() async {
-    final confirmed = await showDialog<bool>(
+  void _markAsDelivered() {
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Text('🎉', style: TextStyle(fontSize: 28)),
-            SizedBox(width: 12),
-            Text('Congratulations!'),
-          ],
-        ),
-        content: const Text(
-          'Has your baby arrived? This will update your status to "delivered" and change the app to postnatal mode.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Yet'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
+      builder: (ctx) => MarkDeliveryDialog(
+        onSuccess: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🎉 Congratulations on your new baby!'),
               backgroundColor: Colors.pink,
-              foregroundColor: Colors.white,
             ),
-            child: const Text('Yes, Baby is Here!'),
-          ),
-        ],
+          );
+          _loadProfile(); // Local refresh
+          // Global refresh
+          if (mounted) {
+            context.read<UserStageProvider>().onDeliveryMarked();
+          }
+        },
       ),
     );
+  }
 
-    if (confirmed != true) return;
+  // Add baby dialog for postpartum users
+  void _showAddBabyDialog() {
+    final nameController = TextEditingController();
+    final weightController = TextEditingController();
+    String gender = 'male';
+    DateTime birthDate = DateTime.now();
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('jwt_token');
-      if (token == null) return;
-
-      final response = await http.post(
-        Uri.parse('$kBaseRoute/mother/me/mark-delivery'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'actual_delivery_date': DateTime.now().toIso8601String(),
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 Congratulations on your new baby!'),
-            backgroundColor: Colors.pink,
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-        );
-        _loadProfile(); // Refresh data
-      } else {
-        final data = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['message'] ?? 'Failed to update status'),
-            backgroundColor: Colors.red,
+          title: const Text('Add Baby'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Baby Name *',
+                    prefixIcon: const Icon(Iconsax.user),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => gender = 'male'),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: gender == 'male'
+                                ? Colors.blue.withOpacity(0.1)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: gender == 'male'
+                                  ? Colors.blue
+                                  : Colors.transparent,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text('👦', style: TextStyle(fontSize: 24)),
+                              Text(
+                                'Boy',
+                                style: TextStyle(
+                                  fontWeight: gender == 'male'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => gender = 'female'),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: gender == 'female'
+                                ? Colors.pink.withOpacity(0.1)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: gender == 'female'
+                                  ? Colors.pink
+                                  : Colors.transparent,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text('👧', style: TextStyle(fontSize: 24)),
+                              Text(
+                                'Girl',
+                                style: TextStyle(
+                                  fontWeight: gender == 'female'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: weightController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Birth Weight (grams)',
+                    prefixIcon: const Icon(Iconsax.weight),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
-    }
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter baby name')),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx);
+                final response = await ApiService().post(
+                  '/baby/create',
+                  body: {
+                    'name': nameController.text.trim(),
+                    'gender': gender,
+                    'birth_date': birthDate.toIso8601String(),
+                    'birth_weight': int.tryParse(weightController.text) ?? 0,
+                  },
+                );
+                if (response.statusCode == 200 || response.statusCode == 201) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Baby added successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _loadProfile(); // Local refresh
+                  // Global refresh
+                  if (mounted) {
+                    context.read<UserStageProvider>().refreshBabies();
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.pink,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Add Baby'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _getLatestWeightLog() {
@@ -277,14 +390,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.black87,
         elevation: 0,
         scrolledUnderElevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Iconsax.setting_2),
-            onPressed: () {
-              // Navigate to settings
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -436,6 +541,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
 
                     const SizedBox(height: 16),
+
+                    // Baby Section (for postpartum users only)
+                    if (_profileData?['status'] == 'delivered')
+                      _buildSection(
+                        title: "Baby",
+                        items: [
+                          _ProfileMenuItem(
+                            icon: Iconsax.happyemoji,
+                            title: "Baby Dashboard",
+                            subtitle: "View and manage baby profiles",
+                            color: Colors.pink,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const BabyDashboard(),
+                                ),
+                              ).then((_) => _loadProfile());
+                            },
+                          ),
+                          _ProfileMenuItem(
+                            icon: Iconsax.add_circle,
+                            title: "Add Baby",
+                            subtitle: "Add another baby profile",
+                            color: Colors.purple,
+                            onTap: () => _showAddBabyDialog(),
+                          ),
+                        ],
+                      ),
+
+                    if (_profileData?['status'] == 'delivered')
+                      const SizedBox(height: 16),
 
                     // Emergency Section
                     _buildSection(

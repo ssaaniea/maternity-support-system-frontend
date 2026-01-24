@@ -123,142 +123,152 @@ class _WeightScreenState extends State<WeightScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        builder: (context, setModalState) => Padding(
+          // Add padding for keyboard
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+          child: Container(
+            // Use constraints instead of fixed height so it can grow with keyboard
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Iconsax.weight,
-                        color: Colors.teal,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Text(
-                        "Log Weight",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Iconsax.weight,
+                          color: Colors.teal,
+                          size: 24,
                         ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Iconsax.close_circle),
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
-              Divider(color: Colors.grey[200], height: 1),
-              // Content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TrackingDateField(
-                        label: "Date",
-                        selectedDate: selectedDate,
-                        icon: Iconsax.calendar_1,
-                        onDateSelected: (date) {
-                          setModalState(() => selectedDate = date);
-                        },
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          "Log Weight",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      TrackingTextField(
-                        controller: weightController,
-                        label: "Weight",
-                        suffix: "kg",
-                        icon: Iconsax.weight,
-                        keyboardType: TextInputType.number,
-                      ),
-                      TrackingTextField(
-                        controller: notesController,
-                        label: "Notes (optional)",
-                        hint: "Any observations...",
-                        icon: Iconsax.note_1,
-                        maxLines: 2,
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Iconsax.close_circle),
+                        color: Colors.grey,
                       ),
                     ],
                   ),
                 ),
-              ),
-              // Save button
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
+                Divider(color: Colors.grey[200], height: 1),
+                // Content - Flexible to allow shrinking when keyboard appears
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TrackingDateField(
+                          label: "Date",
+                          selectedDate: selectedDate,
+                          icon: Iconsax.calendar_1,
+                          onDateSelected: (date) {
+                            setModalState(() => selectedDate = date);
+                          },
+                        ),
+                        TrackingTextField(
+                          controller: weightController,
+                          label: "Weight",
+                          suffix: "kg",
+                          icon: Iconsax.weight,
+                          keyboardType: TextInputType.number,
+                        ),
+                        TrackingTextField(
+                          controller: notesController,
+                          label: "Notes (optional)",
+                          hint: "Any observations...",
+                          icon: Iconsax.note_1,
+                          maxLines: 2,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final w = double.tryParse(weightController.text);
-                      if (w != null) {
-                        _addWeight(selectedDate, w, notesController.text);
-                        Navigator.pop(context);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter a valid weight"),
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                // Save button
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
                       ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      "Save Weight",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    ],
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final w = double.tryParse(weightController.text);
+                        if (w != null) {
+                          _addWeight(selectedDate, w, notesController.text);
+                          Navigator.pop(context);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please enter a valid weight"),
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Save Weight",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -282,9 +292,9 @@ class _WeightScreenState extends State<WeightScreen> {
         onPressed: _showAddDialog,
         label: const Text(
           "Log Weight",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        icon: const Icon(Iconsax.add),
+        icon: const Icon(Iconsax.add, color: Colors.white),
         backgroundColor: Colors.teal,
       ),
       body: _isLoading

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,22 +66,11 @@ class _ArticleDetailsScreenState extends State<ArticleDetailsScreen> {
   Future<void> _fetchArticle() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-
-      final headers = {
-        "Content-Type": "application/json",
-        if (token != null) "Authorization": "Bearer $token",
-      };
-
-      final response = await http.get(
-        Uri.parse('$kBaseRoute/article/${widget.articleId}'),
-        headers: headers,
-      );
+      final response = await ApiService().get('/article/${widget.articleId}');
 
       if (response.statusCode == 200) {
         setState(() {
-          _article = jsonDecode(response.body);
+          _article = response.data as Map<String, dynamic>;
           _isLoading = false;
         });
       } else {

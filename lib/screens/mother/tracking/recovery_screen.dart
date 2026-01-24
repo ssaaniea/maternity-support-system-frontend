@@ -24,8 +24,22 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   String _breastfeedingIssues = "";
   String _notes = "";
 
-  final List<String> _bleedingOptions = ["heavy", "moderate", "light", "spotting", "none"];
-  final List<String> _moodOptions = ["great", "good", "okay", "tired", "overwhelmed", "sad", "anxious"];
+  final List<String> _bleedingOptions = [
+    "heavy",
+    "moderate",
+    "light",
+    "spotting",
+    "none",
+  ];
+  final List<String> _moodOptions = [
+    "great",
+    "good",
+    "okay",
+    "tired",
+    "overwhelmed",
+    "sad",
+    "anxious",
+  ];
 
   @override
   void initState() {
@@ -125,192 +139,216 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        builder: (context, setModalState) => Padding(
+          // Add padding for keyboard
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+          child: Container(
+            // Use constraints instead of fixed height
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              // Title
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Log Your Recovery",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Title
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Pain Level
                       const Text(
-                        "Pain Level",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Text("1"),
-                          Expanded(
-                            child: Slider(
-                              value: _painLevel.toDouble(),
-                              min: 1,
-                              max: 10,
-                              divisions: 9,
-                              label: "$_painLevel",
-                              activeColor: Colors.red,
-                              onChanged: (v) => setModalState(() => _painLevel = v.round()),
-                            ),
-                          ),
-                          const Text("10"),
-                        ],
-                      ),
-                      Center(
-                        child: Text(
-                          _getPainEmoji(_painLevel),
-                          style: const TextStyle(fontSize: 32),
+                        "Log Your Recovery",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Bleeding
-                      const Text(
-                        "Bleeding",
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: _bleedingOptions.map((option) {
-                          final isSelected = _bleeding == option;
-                          return ChoiceChip(
-                            label: Text(option.substring(0, 1).toUpperCase() + option.substring(1)),
-                            selected: isSelected,
-                            selectedColor: Colors.red.shade100,
-                            onSelected: (_) => setModalState(() => _bleeding = option),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Mood
-                      const Text(
-                        "Mood",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _moodOptions.map((option) {
-                          final isSelected = _mood == option;
-                          return ChoiceChip(
-                            label: Text("${_getMoodEmoji(option)} ${option.substring(0, 1).toUpperCase() + option.substring(1)}"),
-                            selected: isSelected,
-                            selectedColor: Colors.purple.shade100,
-                            onSelected: (_) => setModalState(() => _mood = option),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Sleep Hours
-                      const Text(
-                        "Hours of Sleep",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Text("0h"),
-                          Expanded(
-                            child: Slider(
-                              value: _sleepHours.toDouble(),
-                              min: 0,
-                              max: 12,
-                              divisions: 12,
-                              label: "${_sleepHours}h",
-                              activeColor: Colors.blue,
-                              onChanged: (v) => setModalState(() => _sleepHours = v.round()),
-                            ),
-                          ),
-                          const Text("12h"),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Breastfeeding Issues
-                      TextField(
-                        decoration: InputDecoration(
-                          labelText: "Breastfeeding Issues (optional)",
-                          hintText: "e.g., sore nipples, low supply",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onChanged: (v) => _breastfeedingIssues = v,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Notes
-                      TextField(
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          labelText: "Notes (optional)",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onChanged: (v) => _notes = v,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Submit
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _addRecoveryLog,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.pink,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text("Save Recovery Log"),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
-              ),
-            ],
+                // Content - Flexible to allow shrinking when keyboard appears
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Pain Level
+                        const Text(
+                          "Pain Level",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text("1"),
+                            Expanded(
+                              child: Slider(
+                                value: _painLevel.toDouble(),
+                                min: 1,
+                                max: 10,
+                                divisions: 9,
+                                label: "$_painLevel",
+                                activeColor: Colors.red,
+                                onChanged: (v) =>
+                                    setModalState(() => _painLevel = v.round()),
+                              ),
+                            ),
+                            const Text("10"),
+                          ],
+                        ),
+                        Center(
+                          child: Text(
+                            _getPainEmoji(_painLevel),
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Bleeding
+                        const Text(
+                          "Bleeding",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: _bleedingOptions.map((option) {
+                            final isSelected = _bleeding == option;
+                            return ChoiceChip(
+                              label: Text(
+                                option.substring(0, 1).toUpperCase() +
+                                    option.substring(1),
+                              ),
+                              selected: isSelected,
+                              selectedColor: Colors.red.shade100,
+                              onSelected: (_) =>
+                                  setModalState(() => _bleeding = option),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Mood
+                        const Text(
+                          "Mood",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _moodOptions.map((option) {
+                            final isSelected = _mood == option;
+                            return ChoiceChip(
+                              label: Text(
+                                "${_getMoodEmoji(option)} ${option.substring(0, 1).toUpperCase() + option.substring(1)}",
+                              ),
+                              selected: isSelected,
+                              selectedColor: Colors.purple.shade100,
+                              onSelected: (_) =>
+                                  setModalState(() => _mood = option),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Sleep Hours
+                        const Text(
+                          "Hours of Sleep",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text("0h"),
+                            Expanded(
+                              child: Slider(
+                                value: _sleepHours.toDouble(),
+                                min: 0,
+                                max: 12,
+                                divisions: 12,
+                                label: "${_sleepHours}h",
+                                activeColor: Colors.blue,
+                                onChanged: (v) => setModalState(
+                                  () => _sleepHours = v.round(),
+                                ),
+                              ),
+                            ),
+                            const Text("12h"),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Breastfeeding Issues
+                        TextField(
+                          decoration: InputDecoration(
+                            labelText: "Breastfeeding Issues (optional)",
+                            hintText: "e.g., sore nipples, low supply",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onChanged: (v) => _breastfeedingIssues = v,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Notes
+                        TextField(
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            labelText: "Notes (optional)",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onChanged: (v) => _notes = v,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Submit
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _addRecoveryLog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.pink,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Save Recovery Log"),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -327,25 +365,39 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
 
   String _getMoodEmoji(String mood) {
     switch (mood) {
-      case "great": return "😄";
-      case "good": return "🙂";
-      case "okay": return "😐";
-      case "tired": return "😴";
-      case "overwhelmed": return "😰";
-      case "sad": return "😢";
-      case "anxious": return "😟";
-      default: return "😐";
+      case "great":
+        return "😄";
+      case "good":
+        return "🙂";
+      case "okay":
+        return "😐";
+      case "tired":
+        return "😴";
+      case "overwhelmed":
+        return "😰";
+      case "sad":
+        return "😢";
+      case "anxious":
+        return "😟";
+      default:
+        return "😐";
     }
   }
 
   Color _getBleedingColor(String bleeding) {
     switch (bleeding) {
-      case "heavy": return Colors.red.shade700;
-      case "moderate": return Colors.red.shade400;
-      case "light": return Colors.red.shade200;
-      case "spotting": return Colors.red.shade100;
-      case "none": return Colors.green;
-      default: return Colors.grey;
+      case "heavy":
+        return Colors.red.shade700;
+      case "moderate":
+        return Colors.red.shade400;
+      case "light":
+        return Colors.red.shade200;
+      case "spotting":
+        return Colors.red.shade100;
+      case "none":
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -375,8 +427,8 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _recoveryLogs.isEmpty
-                ? _buildEmptyState()
-                : _buildLogsList(),
+            ? _buildEmptyState()
+            : _buildLogsList(),
       ),
     );
   }
@@ -409,8 +461,10 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       itemBuilder: (context, index) {
         final log = _recoveryLogs[index];
         final date = DateTime.tryParse(log['date'] ?? '');
-        final dateStr = date != null ? DateFormat('MMM d, yyyy').format(date) : "Unknown";
-        
+        final dateStr = date != null
+            ? DateFormat('MMM d, yyyy').format(date)
+            : "Unknown";
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -433,7 +487,10 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                 children: [
                   Text(
                     dateStr,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   Text(
                     "${_getMoodEmoji(log['mood'] ?? 'okay')} ${log['mood'] ?? ''}",
@@ -444,9 +501,17 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildMiniStat("Pain", "${log['pain_level'] ?? '-'}/10", Colors.red.shade100),
+                  _buildMiniStat(
+                    "Pain",
+                    "${log['pain_level'] ?? '-'}/10",
+                    Colors.red.shade100,
+                  ),
                   const SizedBox(width: 8),
-                  _buildMiniStat("Sleep", "${log['sleep_hours'] ?? '-'}h", Colors.blue.shade100),
+                  _buildMiniStat(
+                    "Sleep",
+                    "${log['sleep_hours'] ?? '-'}h",
+                    Colors.blue.shade100,
+                  ),
                   const SizedBox(width: 8),
                   _buildMiniStat(
                     "Bleeding",
@@ -455,7 +520,8 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                   ),
                 ],
               ),
-              if (log['breastfeeding_issues'] != null && log['breastfeeding_issues'].isNotEmpty) ...[
+              if (log['breastfeeding_issues'] != null &&
+                  log['breastfeeding_issues'].isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   "Breastfeeding: ${log['breastfeeding_issues']}",
@@ -466,7 +532,11 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                 const SizedBox(height: 4),
                 Text(
                   log['notes'],
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ],
             ],
@@ -485,8 +555,14 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       ),
       child: Column(
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.black54)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Colors.black54),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
         ],
       ),
     );

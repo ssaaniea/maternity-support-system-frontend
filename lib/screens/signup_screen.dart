@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/screens/caregiver/caregiver_signup_details.dart';
 import 'package:project_frontend/screens/mother/mother_app_shell.dart';
 import 'package:project_frontend/screens/mother/signup_details.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -83,20 +84,24 @@ class _SignupScreenState extends State<SignupScreen> {
             (Route<dynamic> route) => false,
           );
         } else if (role == 'doctor') {
-          // Navigator.pushReplacementNamed(context, '/doctor-home');
+          // TODO: Replace with DoctorSignupDetails when implemented
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute<void>(
-              builder: (context) =>
-                  const MotherAppShell(), // Replace with DoctorHomeScreen
+              builder: (context) => const MotherAppShell(),
+            ),
+            (Route<dynamic> route) => false,
+          );
+        } else if (role == 'caregiver') {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute<void>(
+              builder: (context) => const CaregiverSignupDetails(),
             ),
             (Route<dynamic> route) => false,
           );
         } else {
-          // Navigator.pushReplacementNamed(context, '/home');
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute<void>(
-              builder: (context) =>
-                  const MotherAppShell(), // Replace with DefaultHomeScreen
+              builder: (context) => const MotherAppShell(),
             ),
             (Route<dynamic> route) => false,
           );

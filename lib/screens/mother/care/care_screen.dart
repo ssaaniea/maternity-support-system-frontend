@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/screens/mother/care/all_bookings_screen.dart';
 import 'package:project_frontend/screens/mother/care/caregiver_details_screen.dart';
 import 'package:project_frontend/screens/mother/care/caregiver_list_screen.dart';
 import 'package:project_frontend/screens/mother/care/doctor_details_screen.dart';
@@ -34,57 +36,37 @@ class _CareScreenState extends State<CareScreen> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-      if (token == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      };
-
       // Fetch emergency contacts
-      final contactsRes = await http.get(
-        Uri.parse('$kBaseRoute/mother/me/emergency-contacts'),
-        headers: headers,
+      final contactsRes = await ApiService().get(
+        '/mother/me/emergency-contacts',
       );
       if (contactsRes.statusCode == 200) {
-        final data = jsonDecode(contactsRes.body);
+        final data = contactsRes.data;
         _emergencyContacts = List<Map<String, dynamic>>.from(
           data['data'] ?? [],
         );
       }
 
       // Fetch caregivers
-      final caregiversRes = await http.get(
-        Uri.parse('$kBaseRoute/caregiver/all'),
-        headers: headers,
-      );
+      final caregiversRes = await ApiService().get('/caregiver/all');
       if (caregiversRes.statusCode == 200) {
-        final data = jsonDecode(caregiversRes.body);
+        final data = caregiversRes.data;
         _caregivers = List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
 
       // Fetch doctors
-      final doctorsRes = await http.get(
-        Uri.parse('$kBaseRoute/doctor/'),
-        headers: headers,
-      );
+      final doctorsRes = await ApiService().get('/doctor/');
       if (doctorsRes.statusCode == 200) {
-        final data = jsonDecode(doctorsRes.body);
+        final data = doctorsRes.data;
         _doctors = List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
 
       // Fetch my bookings
-      final bookingsRes = await http.get(
-        Uri.parse('$kBaseRoute/caregiver-booking/my-bookings'),
-        headers: headers,
+      final bookingsRes = await ApiService().get(
+        '/caregiver-booking/my-bookings',
       );
       if (bookingsRes.statusCode == 200) {
-        final data = jsonDecode(bookingsRes.body);
+        final data = bookingsRes.data;
         _myBookings = List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
 
@@ -112,21 +94,13 @@ class _CareScreenState extends State<CareScreen> {
     String relation,
   ) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-      if (token == null) return;
-
-      final response = await http.post(
-        Uri.parse('$kBaseRoute/mother/me/emergency-contacts'),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService().post(
+        '/mother/me/emergency-contacts',
+        body: {
           "name": name,
           "phone": phone,
           "relation": relation,
-        }),
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -155,16 +129,8 @@ class _CareScreenState extends State<CareScreen> {
 
   Future<void> _deleteEmergencyContact(String contactId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-      if (token == null) return;
-
-      final response = await http.delete(
-        Uri.parse('$kBaseRoute/mother/me/emergency-contacts/$contactId'),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
+      final response = await ApiService().delete(
+        '/mother/me/emergency-contacts/$contactId',
       );
 
       if (response.statusCode == 200) {
@@ -974,19 +940,39 @@ class _CareScreenState extends State<CareScreen> {
   }
 
   Widget _buildBookingsSection() {
+    final showSeeAll = _myBookings.length > 4;
+    final displayCount = showSeeAll ? 4 : _myBookings.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "My Bookings",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            const Text(
+              "My Bookings",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Spacer(),
+            if (showSeeAll)
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AllBookingsScreen(bookings: _myBookings),
+                    ),
+                  );
+                },
+                child: const Text("See All"),
+              ),
+          ],
         ),
         const SizedBox(height: 12),
         ...List.generate(
-          _myBookings.length > 3 ? 3 : _myBookings.length,
+          displayCount,
           (index) => _buildBookingCard(_myBookings[index]),
         ),
       ],
@@ -1048,6 +1034,238 @@ class _CareScreenState extends State<CareScreen> {
     }
   }
 
+  void _showRatingDialog(Map<String, dynamic> booking) {
+    int selectedRating = 5;
+    final commentController = TextEditingController();
+    final caregiver = booking['caregiver'] as Map<String, dynamic>? ?? {};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Iconsax.star1,
+                        color: Colors.amber,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Rate Your Caregiver",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            caregiver['name'] ?? 'Caregiver',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Star rating
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    final starIndex = index + 1;
+                    return GestureDetector(
+                      onTap: () =>
+                          setModalState(() => selectedRating = starIndex),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Icon(
+                          starIndex <= selectedRating
+                              ? Iconsax.star1
+                              : Iconsax.star,
+                          color: Colors.amber,
+                          size: 40,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _getRatingText(selectedRating),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Comment field
+                TextField(
+                  controller: commentController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: "Share your experience (optional)",
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await _submitRating(
+                        booking['_id'],
+                        selectedRating,
+                        commentController.text,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      "Submit Review",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getRatingText(int rating) {
+    switch (rating) {
+      case 1:
+        return "Poor";
+      case 2:
+        return "Fair";
+      case 3:
+        return "Good";
+      case 4:
+        return "Very Good";
+      case 5:
+        return "Excellent";
+      default:
+        return "";
+    }
+  }
+
+  Future<void> _submitRating(
+    String bookingId,
+    int rating,
+    String comment,
+  ) async {
+    try {
+      final response = await ApiService().post(
+        '/caregiver-booking/$bookingId/review',
+        body: {
+          'rating': rating,
+          'comment': comment,
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Iconsax.tick_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                const Text("Review submitted successfully!"),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        _fetchData(); // Refresh bookings
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message ?? "Failed to submit review"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildBookingCard(Map<String, dynamic> booking) {
     print(booking);
     final statusColors = {
@@ -1059,22 +1277,8 @@ class _CareScreenState extends State<CareScreen> {
     };
 
     final caregiver = booking['caregiver'] as Map<String, dynamic>? ?? {};
-
-    // I/flutter (13938): {
-    //_id: 6936b5cd8493ab830d067bce,
-    //mother: 69368b4eb50aa2032c55f30a,
-    //caregiver: {rating: 0, _id: 68b7d95450fc790165692a1e, name: abc, shift: wholeday, amount: 2000},
-    //start_date: 2025-12-09T18:30:00.000Z,
-    //end_date: 2025-12-12T18:30:00.000Z,
-    //shift: wholeday,
-    //accommodation: with_food,
-    //total_amount : 8000,
-    //status: pending,
-    //address: home,
-    //notes: hi,
-    //createdAt: 2025-12-08T11:26:05.917Z,
-    //updatedAt: 2025-12-08T11:26:05.917Z, __v: 0}
-    // Reloaded 1 of 985 libraries in 1,588ms (compile: 110 ms, reload: 560 ms, reassemble: 402 ms).
+    final hasReview =
+        booking['review'] != null && booking['review']['rating'] != null;
 
     return InkWell(
       onTap: () {
@@ -1086,7 +1290,12 @@ class _CareScreenState extends State<CareScreen> {
           ),
           builder: (context) {
             return Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1144,7 +1353,98 @@ class _CareScreenState extends State<CareScreen> {
                     _detailRow("Address", booking['address']),
                     _detailRow("Notes", booking['notes']),
 
+                    // Show review if exists
+                    if (hasReview) ...[
+                      const Divider(height: 30),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.amber.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Iconsax.star1,
+                                  color: Colors.amber,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  "Your Review",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: List.generate(
+                                5,
+                                (i) => Icon(
+                                  i < (booking['review']['rating'] ?? 0)
+                                      ? Iconsax.star1
+                                      : Iconsax.star,
+                                  color: Colors.amber,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            if (booking['review']['comment'] != null &&
+                                booking['review']['comment'].isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '"${booking['review']['comment']}"',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 20),
+
+                    // Show rate button for completed bookings without review
+                    if (booking['status'] == 'completed' && !hasReview) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showRatingDialog(booking);
+                          },
+                          icon: const Icon(Iconsax.star),
+                          label: const Text(
+                            "Rate Caregiver",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
                     SizedBox(
                       width: double.infinity,
@@ -1152,6 +1452,7 @@ class _CareScreenState extends State<CareScreen> {
                         onPressed: () => Navigator.pop(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),

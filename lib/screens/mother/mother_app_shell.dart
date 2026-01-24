@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/screens/mother/care/care_screen.dart';
 import 'package:project_frontend/screens/mother/explore/explore_screen.dart';
-import 'package:project_frontend/screens/mother/home_screen.dart';
+import 'package:project_frontend/screens/mother/home/home_screen.dart';
 import 'package:project_frontend/screens/mother/profile/profile_screen.dart';
 import 'package:project_frontend/screens/mother/tracking/tracking_screen.dart';
 

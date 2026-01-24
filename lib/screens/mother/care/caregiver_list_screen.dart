@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
-import 'package:project_frontend/constants.dart';
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/screens/mother/care/caregiver_details_screen.dart';
 
 class CaregiverListScreen extends StatefulWidget {
@@ -15,23 +13,49 @@ class CaregiverListScreen extends StatefulWidget {
 class _CaregiverListScreenState extends State<CaregiverListScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _caregivers = [];
+  List<Map<String, dynamic>> _filteredCaregivers = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchCaregivers();
+    _searchController.addListener(_filterCaregivers);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterCaregivers() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCaregivers = _caregivers;
+      } else {
+        _filteredCaregivers = _caregivers.where((c) {
+          final name = (c['name'] ?? '').toString().toLowerCase();
+          final shift = (c['shift'] ?? '').toString().toLowerCase();
+          return name.contains(query) || shift.contains(query);
+        }).toList();
+      }
+    });
   }
 
   Future<void> _fetchCaregivers() async {
     try {
-      final response = await http.get(Uri.parse('$kBaseRoute/caregiver/all'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      final response = await ApiService().get('/caregiver/all');
+      if (response.success && response.data != null) {
+        final data = response.data;
         setState(() {
-          _caregivers = List<Map<String, dynamic>>.from(data['data']);
+          _caregivers = List<Map<String, dynamic>>.from(data['data'] ?? []);
+          _filteredCaregivers = List<Map<String, dynamic>>.from(_caregivers);
           _isLoading = false;
         });
       } else {
+        print("Failed to fetch caregivers: ${response.message}");
         setState(() => _isLoading = false);
       }
     } catch (e) {
@@ -43,7 +67,7 @@ class _CaregiverListScreenState extends State<CaregiverListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
           "All Caregivers",
@@ -53,19 +77,74 @@ class _CaregiverListScreenState extends State<CaregiverListScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.pink))
-          : _caregivers.isEmpty
-          ? _buildEmptyState()
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _caregivers.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final caregiver = _caregivers[index];
-                return _buildCaregiverCard(caregiver);
-              },
+      body: Column(
+        children: [
+          // Search Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "Search by name or shift...",
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(
+                  Iconsax.search_normal,
+                  color: Colors.grey[400],
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Iconsax.close_circle,
+                          color: Colors.grey[400],
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.pink, width: 2),
+                ),
+              ),
             ),
+          ),
+          // List
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.pink),
+                  )
+                : _filteredCaregivers.isEmpty
+                ? _buildEmptyState()
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredCaregivers.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final caregiver = _filteredCaregivers[index];
+                      return _buildCaregiverCard(caregiver);
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -153,265 +153,277 @@ class _SymptomScreenState extends State<SymptomScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        builder: (context, setModalState) => Padding(
+          // Add padding for keyboard
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+          child: Container(
+            // Use constraints instead of fixed height
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Iconsax.health,
-                        color: Colors.purple,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Text(
-                        "How are you feeling?",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Iconsax.health,
+                          color: Colors.purple,
+                          size: 24,
                         ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Iconsax.close_circle),
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
-              Divider(color: Colors.grey[200], height: 1),
-              // Content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TrackingDateField(
-                        label: "Date",
-                        selectedDate: selectedDate,
-                        icon: Iconsax.calendar_1,
-                        onDateSelected: (date) {
-                          setModalState(() => selectedDate = date);
-                        },
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          "How are you feeling?",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-
-                      // Mood section
-                      const TrackingSectionHeader(
-                        title: "Your Mood",
-                        icon: Iconsax.emoji_happy,
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _moods.map((mood) {
-                          final isSelected = selectedMood == mood['name'];
-                          return GestureDetector(
-                            onTap: () {
-                              setModalState(() => selectedMood = mood['name']!);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Colors.purple.withOpacity(0.15)
-                                    : Colors.grey[100],
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Colors.purple
-                                      : Colors.transparent,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    mood['emoji']!,
-                                    style: const TextStyle(fontSize: 20),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    mood['name']!.toUpperCase(),
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.purple
-                                          : Colors.grey[600],
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Symptoms section
-                      const TrackingSectionHeader(
-                        title: "Symptoms (tap to select)",
-                        icon: Iconsax.health,
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _allSymptoms.map((symptom) {
-                          final isSelected = selectedSymptoms.contains(
-                            symptom['name'],
-                          );
-                          return GestureDetector(
-                            onTap: () {
-                              setModalState(() {
-                                if (isSelected) {
-                                  selectedSymptoms.remove(symptom['name']);
-                                } else {
-                                  selectedSymptoms.add(symptom['name']);
-                                }
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Colors.purple.withOpacity(0.15)
-                                    : Colors.grey[100],
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Colors.purple
-                                      : Colors.transparent,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    symptom['icon'],
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    symptom['name'].toString().replaceAll(
-                                      '_',
-                                      ' ',
-                                    ),
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.purple
-                                          : Colors.grey[700],
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      TrackingTextField(
-                        controller: notesController,
-                        label: "Additional Notes",
-                        hint: "Any other observations...",
-                        icon: Iconsax.note_1,
-                        maxLines: 3,
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Iconsax.close_circle),
+                        color: Colors.grey,
                       ),
                     ],
                   ),
                 ),
-              ),
-              // Save button
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
+                Divider(color: Colors.grey[200], height: 1),
+                // Content - Flexible to allow shrinking when keyboard appears
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TrackingDateField(
+                          label: "Date",
+                          selectedDate: selectedDate,
+                          icon: Iconsax.calendar_1,
+                          onDateSelected: (date) {
+                            setModalState(() => selectedDate = date);
+                          },
+                        ),
+
+                        // Mood section
+                        const TrackingSectionHeader(
+                          title: "Your Mood",
+                          icon: Iconsax.emoji_happy,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _moods.map((mood) {
+                            final isSelected = selectedMood == mood['name'];
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(
+                                  () => selectedMood = mood['name']!,
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.purple.withOpacity(0.15)
+                                      : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.purple
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      mood['emoji']!,
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      mood['name']!.toUpperCase(),
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.purple
+                                            : Colors.grey[600],
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Symptoms section
+                        const TrackingSectionHeader(
+                          title: "Symptoms (tap to select)",
+                          icon: Iconsax.health,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _allSymptoms.map((symptom) {
+                            final isSelected = selectedSymptoms.contains(
+                              symptom['name'],
+                            );
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    selectedSymptoms.remove(symptom['name']);
+                                  } else {
+                                    selectedSymptoms.add(symptom['name']);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.purple.withOpacity(0.15)
+                                      : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.purple
+                                        : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      symptom['icon'],
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      symptom['name'].toString().replaceAll(
+                                        '_',
+                                        ' ',
+                                      ),
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.purple
+                                            : Colors.grey[700],
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        TrackingTextField(
+                          controller: notesController,
+                          label: "Additional Notes",
+                          hint: "Any other observations...",
+                          icon: Iconsax.note_1,
+                          maxLines: 3,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _addSymptomLog(
-                        selectedDate,
-                        selectedSymptoms,
-                        selectedMood,
-                        notesController.text,
-                      );
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                // Save button
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
                       ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      "Save Entry",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    ],
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _addSymptomLog(
+                          selectedDate,
+                          selectedSymptoms,
+                          selectedMood,
+                          notesController.text,
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Save Entry",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -442,9 +454,9 @@ class _SymptomScreenState extends State<SymptomScreen> {
         onPressed: _showAddDialog,
         label: const Text(
           "Log Symptoms",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        icon: const Icon(Iconsax.add),
+        icon: const Icon(Iconsax.add, color: Colors.white),
         backgroundColor: Colors.purple,
       ),
       body: _isLoading

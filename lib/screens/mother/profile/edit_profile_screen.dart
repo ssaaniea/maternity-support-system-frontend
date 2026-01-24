@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:http/http.dart' as http;
+import 'package:project_frontend/apiService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project_frontend/constants.dart';
 
@@ -19,14 +20,12 @@ class EditProfileService {
 
   static Future<bool> updateProfile(Map<String, dynamic> data) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('$kBaseRoute/mother/me/profile'),
-        headers: headers,
-        body: jsonEncode(data),
+      final response = await ApiService().put(
+        '/mother/me/profile',
+        body: data,
       );
 
-      log('Update Profile Response: ${response.statusCode} - ${response.body}');
+      log('Update Profile Response: ${response.statusCode} - ${response.data}');
       return response.statusCode == 200;
     } catch (e) {
       log('Error updating profile: $e');

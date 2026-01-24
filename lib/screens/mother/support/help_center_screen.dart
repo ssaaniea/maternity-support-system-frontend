@@ -74,6 +74,55 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           'You can edit your profile by going to the Profile section and tapping "Edit Profile". Update your information and save the changes.',
       category: 'Account',
     ),
+    // Postpartum FAQs
+    FAQItem(
+      question: 'How do I track my baby\'s feedings?',
+      answer:
+          'Go to the Baby Dashboard from the Track tab and tap "Feeding". You can log breast or bottle feedings with duration and notes. This helps you monitor your baby\'s feeding patterns.',
+      category: 'Baby Care',
+    ),
+    FAQItem(
+      question: 'What is a normal newborn sleep pattern?',
+      answer:
+          'Newborns typically sleep 14-17 hours per day in short periods of 2-4 hours. They wake frequently for feeding. By 3-4 months, many babies start sleeping longer stretches at night.',
+      category: 'Baby Care',
+    ),
+    FAQItem(
+      question: 'How do I log diaper changes?',
+      answer:
+          'In the Baby Dashboard, tap "Diapers" to log each change. Track wet, dirty, or mixed diapers. Monitoring diaper output helps ensure your baby is getting enough nutrition.',
+      category: 'Baby Care',
+    ),
+    FAQItem(
+      question: 'How many wet diapers should my newborn have?',
+      answer:
+          'By day 5, expect at least 6 wet diapers per day. Fewer wet diapers may indicate dehydration. Contact your pediatrician if you notice a significant decrease.',
+      category: 'Baby Care',
+    ),
+    FAQItem(
+      question: 'What are signs of postpartum depression?',
+      answer:
+          'Signs include persistent sadness, loss of interest, difficulty bonding with baby, changes in appetite or sleep, and feelings of worthlessness. If you experience these symptoms for more than 2 weeks, please reach out to your healthcare provider.',
+      category: 'Postpartum',
+    ),
+    FAQItem(
+      question: 'How do I track my postpartum recovery?',
+      answer:
+          'Use the Recovery tracker in the Track tab to log your pain levels, mood, sleep quality, and physical symptoms. This helps you and your healthcare provider monitor your healing progress.',
+      category: 'Postpartum',
+    ),
+    FAQItem(
+      question: 'When should I call the pediatrician?',
+      answer:
+          'Call immediately for: fever over 100.4°F (38°C) in babies under 3 months, difficulty breathing, refusing to eat, unusual lethargy, or signs of dehydration. Trust your instincts - if something seems wrong, call your doctor.',
+      category: 'Baby Care',
+    ),
+    FAQItem(
+      question: 'How do I use the Mood Tracker?',
+      answer:
+          'The Mood Tracker helps you monitor your emotional wellbeing after delivery. Log how you\'re feeling daily - this creates a record that can help identify patterns and support conversations with your healthcare provider.',
+      category: 'Postpartum',
+    ),
   ];
 
   late List<FAQItem> filteredFaqs;
@@ -137,7 +186,16 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ['All', 'Tracking', 'Health', 'Emergency', 'Account', 'Privacy'];
+    final categories = [
+      'All',
+      'Tracking',
+      'Baby Care',
+      'Postpartum',
+      'Health',
+      'Emergency',
+      'Account',
+      'Privacy',
+    ];
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -357,11 +415,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     selectedColor: Colors.teal.withOpacity(0.2),
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.teal : Colors.grey[700],
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                     side: BorderSide(
-                      color:
-                          isSelected ? Colors.teal : Colors.grey[300]!,
+                      color: isSelected ? Colors.teal : Colors.grey[300]!,
                       width: 1,
                     ),
                   ),

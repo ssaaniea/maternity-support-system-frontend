@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:project_frontend/screens/caregiver/caregiver_app_shell.dart';
 import 'package:project_frontend/screens/mother/mother_app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project_frontend/screens/login_screen.dart';
-import 'package:project_frontend/screens/mother/home_screen.dart';
-// import your AdminScreen, DoctorScreen, CaregiverScreen
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -24,11 +23,13 @@ class _SplashScreenState extends State<SplashScreen> {
     final token = prefs.getString("jwt_token");
     final role = prefs.getString("user_role");
 
-    print('role : ${token}');
+    print('role: $role, token: ${token != null ? 'exists' : 'null'}');
 
     await Future.delayed(
       const Duration(seconds: 1),
     ); // small delay for splash effect
+
+    if (!mounted) return;
 
     if (token != null && role != null) {
       if (role == "mother") {
@@ -36,24 +37,30 @@ class _SplashScreenState extends State<SplashScreen> {
           context,
           MaterialPageRoute(builder: (_) => const MotherAppShell()),
         );
+      } else if (role == "caregiver") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CaregiverAppShell()),
+        );
       } else if (role == "admin") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const Placeholder()), // AdminScreen
+          MaterialPageRoute(
+            builder: (_) => const Placeholder(),
+          ), // TODO: AdminScreen
         );
       } else if (role == "doctor") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => const Placeholder(),
-          ), // DoctorScreen
+          ), // TODO: DoctorScreen
         );
-      } else if (role == "caregiver") {
+      } else {
+        // Unknown role, go to login
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const Placeholder(),
-          ), // CaregiverScreen
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       }
     } else {

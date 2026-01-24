@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/widgets/tracking_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,17 +48,9 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
     setState(() => _isBooking = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("jwt_token");
-      if (token == null) return;
-
-      final response = await http.post(
-        Uri.parse('$kBaseRoute/doctor-booking/create'),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService().post(
+        '/doctor-booking/create',
+        body: {
           "doctor_id": widget.doctor['_id'],
           "start_date": _startDate!.toIso8601String(),
           "end_date": _endDate!.toIso8601String(),
@@ -66,7 +59,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
           "total_amount": _calculateTotal(),
           "address": _addressController.text,
           "notes": _notesController.text,
-        }),
+        },
       );
 
       if (response.statusCode == 201) {
@@ -80,7 +73,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
           Navigator.pop(context); // Close details/booking screen
         }
       } else {
-        final error = jsonDecode(response.body);
+        final error = jsonDecode(response.data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

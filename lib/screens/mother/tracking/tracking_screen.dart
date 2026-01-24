@@ -11,6 +11,8 @@ import 'package:project_frontend/screens/mother/tracking/kick_count_screen.dart'
 import 'package:project_frontend/screens/mother/tracking/recovery_screen.dart';
 import 'package:project_frontend/screens/mother/tracking/symptom_screen.dart';
 import 'package:project_frontend/screens/mother/tracking/weight_screen.dart';
+import 'package:project_frontend/screens/mother/baby/baby_dashboard.dart';
+import 'package:project_frontend/screens/mother/postpartum/mood_tracker_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TrackingScreen extends StatefulWidget {
@@ -42,6 +44,7 @@ class JournalEntry {
 class _TrackingScreenState extends State<TrackingScreen> {
   bool _isLoading = true;
   bool _hasProfile = false;
+  String? _errorMessage;
 
   // Profile data
   String _status = "pregnant";
@@ -57,7 +60,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   Future<void> _fetchProfile() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString("jwt_token");
@@ -193,7 +199,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
       }
     } catch (e) {
       print("Error fetching profile: $e");
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            e.toString().contains('SocketException') ||
+                e.toString().contains('ClientException') ||
+                e.toString().contains('TimeoutException') ||
+                e.toString().contains('Connection')
+            ? 'No internet connection. Please check your network and try again.'
+            : 'Something went wrong. Please try again.';
+      });
     }
   }
 
@@ -203,6 +218,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorScreen();
     }
 
     if (!_hasProfile) {
@@ -254,6 +273,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                if (!isPregnant)
+                  _buildQuickButton(
+                    icon: Iconsax.happyemoji,
+                    label: "Baby",
+                    color: Colors.pink,
+                    onTap: () => _navigateAndRefresh(const BabyDashboard()),
+                  ),
                 _buildQuickButton(
                   icon: Iconsax.weight,
                   label: "Weight",
@@ -282,6 +308,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   color: Colors.green,
                   onTap: () => _navigateAndRefresh(const CheckupScreen()),
                 ),
+                if (!isPregnant)
+                  _buildQuickButton(
+                    icon: Iconsax.emoji_happy,
+                    label: "Mood",
+                    color: Colors.purple,
+                    onTap: () => _navigateAndRefresh(const MoodTrackerScreen()),
+                  ),
               ],
             ),
           ),
@@ -479,6 +512,51 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorScreen() {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Iconsax.wifi_square,
+                size: 80,
+                color: Colors.orange[300],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Connection Error",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage ?? 'Something went wrong',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _fetchProfile,
+                icon: const Icon(Iconsax.refresh),
+                label: const Text("Retry"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pink,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

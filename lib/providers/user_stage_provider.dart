@@ -7,6 +7,7 @@ class UserStageProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool _isPregnant = true;
   bool _profileNotFound = false;
+  String? _errorMessage;
   Map<String, dynamic>? _motherProfile;
   List<Map<String, dynamic>> _babies = [];
   String? _selectedBabyId;
@@ -16,10 +17,18 @@ class UserStageProvider extends ChangeNotifier {
   bool get isPregnant => _isPregnant;
   bool get isPostpartum => !_isPregnant;
   bool get profileNotFound => _profileNotFound;
+  bool get hasError => _errorMessage != null;
+  String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get motherProfile => _motherProfile;
   List<Map<String, dynamic>> get babies => _babies;
   bool get hasBaby => _babies.isNotEmpty;
   String? get selectedBabyId => _selectedBabyId;
+
+  /// Clear error state
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
 
   /// Get currently selected baby, or first baby if none selected
   Map<String, dynamic>? get selectedBaby {
@@ -34,6 +43,7 @@ class UserStageProvider extends ChangeNotifier {
   /// Load user profile and determine stage
   Future<void> loadProfile() async {
     _isLoading = true;
+    _errorMessage = null; // Clear previous errors on retry
     notifyListeners();
     debugPrint("UserStageProvider: Loading profile...");
 
@@ -46,6 +56,7 @@ class UserStageProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         _motherProfile = response.data['data'];
         _profileNotFound = false;
+        _errorMessage = null;
 
         // pregnancy_week is returned at root level of response, not inside data
         final pregWeek = response.data['pregnancy_week'];
@@ -78,13 +89,24 @@ class UserStageProvider extends ChangeNotifier {
         );
         _profileNotFound = true;
         _motherProfile = null;
+      } else if (response.statusCode == 0) {
+        // Network error (statusCode 0 indicates network failure)
+        debugPrint(
+          "UserStageProvider: Network error occurred",
+        );
+        _errorMessage =
+            'Unable to connect to server. Please check your internet connection and try again.';
       } else {
         debugPrint(
           "UserStageProvider: Failed to load profile: ${response.message}",
         );
+        _errorMessage =
+            response.message ?? 'Failed to load profile. Please try again.';
       }
     } catch (e) {
-      debugPrint('UserStageProvider: Error loading profile: $e');
+      debugPrint('UserStageProvider: Failed to load profile: $e');
+      _errorMessage =
+          'Network error: Unable to connect. Please check your connection and try again.';
     }
 
     _isLoading = false;

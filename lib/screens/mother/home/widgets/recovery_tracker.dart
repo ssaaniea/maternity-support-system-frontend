@@ -4,10 +4,28 @@ import 'package:provider/provider.dart';
 import 'package:project_frontend/providers/home_provider.dart';
 import 'package:project_frontend/providers/user_stage_provider.dart';
 import 'package:project_frontend/screens/mother/baby/baby_dashboard.dart';
+import 'package:project_frontend/screens/mother/baby/feeding_screen.dart';
+import 'package:project_frontend/screens/mother/baby/sleep_screen.dart';
+import 'package:project_frontend/screens/mother/baby/diaper_screen.dart';
 import 'package:project_frontend/screens/mother/home/widgets/tracker_card.dart';
 
 class RecoveryTracker extends StatelessWidget {
   const RecoveryTracker({super.key});
+
+  void _navigateAndRefresh(BuildContext context, Widget screen) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+    // Refresh stats when returning
+    if (context.mounted) {
+      final provider = context.read<UserStageProvider>();
+      final babyId = provider.selectedBabyId;
+      if (babyId != null) {
+        context.read<HomeProvider>().loadBabyStats(babyId, forceRefresh: true);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +107,10 @@ class RecoveryTracker extends StatelessWidget {
                         value:
                             '${homeProvider.todayFeedCount} today\n${homeProvider.lastFeedTime != null ? "Last: ${homeProvider.lastFeedTime}" : ""}',
                         bgColor: Colors.orange.shade100,
+                        onTap: () => _navigateAndRefresh(
+                          context,
+                          const FeedingScreen(),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -99,6 +121,10 @@ class RecoveryTracker extends StatelessWidget {
                         value:
                             '${homeProvider.todaySleepHours.toStringAsFixed(1)}h',
                         bgColor: Colors.indigo.shade100,
+                        onTap: () => _navigateAndRefresh(
+                          context,
+                          const SleepScreen(),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -108,6 +134,10 @@ class RecoveryTracker extends StatelessWidget {
                         title: 'Diapers',
                         value: '${homeProvider.todayDiaperCount}',
                         bgColor: Colors.teal.shade100,
+                        onTap: () => _navigateAndRefresh(
+                          context,
+                          const DiaperScreen(),
+                        ),
                       ),
                     ),
                   ],

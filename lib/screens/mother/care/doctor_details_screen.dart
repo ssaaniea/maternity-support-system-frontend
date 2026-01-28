@@ -99,7 +99,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("doctor Profile"),
+        title: const Text("D1octor Profile"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,

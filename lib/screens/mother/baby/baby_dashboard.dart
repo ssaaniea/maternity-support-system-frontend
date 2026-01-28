@@ -21,6 +21,7 @@ class BabyDashboard extends StatefulWidget {
 class _BabyDashboardState extends State<BabyDashboard> {
   bool _isLoading = true;
   Map<String, dynamic>? _todayStats;
+  String? _currentBabyId; // Track current baby for change detection
 
   @override
   void initState() {
@@ -28,7 +29,24 @@ class _BabyDashboardState extends State<BabyDashboard> {
     _loadTodayStats();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Detect baby selection changes and reload stats
+    final provider = context.watch<UserStageProvider>();
+    final newBabyId = provider.selectedBabyId;
+    if (_currentBabyId != null && _currentBabyId != newBabyId) {
+      debugPrint(
+        'BabyDashboard: Baby changed from $_currentBabyId to $newBabyId, reloading stats',
+      );
+      _loadTodayStats();
+    }
+    _currentBabyId = newBabyId;
+  }
+
   Future<void> _loadTodayStats() async {
+    if (mounted) setState(() => _isLoading = true);
+
     final provider = context.read<UserStageProvider>();
     final babyId = provider.selectedBabyId;
 
@@ -51,6 +69,7 @@ class _BabyDashboardState extends State<BabyDashboard> {
       // Process feeding logs
       int feedCount = 0;
       String? lastFeedTime;
+      DateTime? lastFeedDateTime;
       if (results[0].statusCode == 200) {
         final data = results[0].data is String
             ? jsonDecode(results[0].data)
@@ -62,7 +81,15 @@ class _BabyDashboardState extends State<BabyDashboard> {
           final feedDate = feed['start_time']?.toString().substring(0, 10);
           if (feedDate == todayStr) {
             feedCount++;
-            lastFeedTime ??= feed['start_time'];
+            // Track the most recent (latest) feed time
+            if (feed['start_time'] != null) {
+              final feedTime = DateTime.parse(feed['start_time']).toLocal();
+              if (lastFeedDateTime == null ||
+                  feedTime.isAfter(lastFeedDateTime)) {
+                lastFeedDateTime = feedTime;
+                lastFeedTime = DateFormat('h:mm a').format(feedTime);
+              }
+            }
           }
         }
       }
@@ -79,8 +106,8 @@ class _BabyDashboardState extends State<BabyDashboard> {
         for (var sleep in sleeps) {
           final sleepDate = sleep['start_time']?.toString().substring(0, 10);
           if (sleepDate == todayStr && sleep['end_time'] != null) {
-            final start = DateTime.parse(sleep['start_time']);
-            final end = DateTime.parse(sleep['end_time']);
+            final start = DateTime.parse(sleep['start_time']).toLocal();
+            final end = DateTime.parse(sleep['end_time']).toLocal();
             totalSleepMinutes += end.difference(start).inMinutes;
           }
         }
@@ -117,16 +144,6 @@ class _BabyDashboardState extends State<BabyDashboard> {
     } catch (e) {
       debugPrint('Error loading baby stats in baby dashboard: $e');
       if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  String _formatTime(String? isoTime) {
-    if (isoTime == null) return '--';
-    try {
-      final dt = DateTime.parse(isoTime);
-      return DateFormat('h:mm a').format(dt);
-    } catch (_) {
-      return '--';
     }
   }
 
@@ -442,7 +459,7 @@ class _BabyDashboardState extends State<BabyDashboard> {
             icon: Iconsax.milk,
             label: 'Feedings',
             value: '${_todayStats?['feedCount'] ?? 0}',
-            subtitle: 'Last: ${_formatTime(_todayStats?['lastFeedTime'])}',
+            subtitle: 'Last: ${_todayStats?['lastFeedTime'] ?? '--'}',
             color: Colors.orange,
           ),
         ),

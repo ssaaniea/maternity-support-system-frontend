@@ -173,8 +173,8 @@ class _SleepScreenState extends State<SleepScreen> {
 
   String _formatDuration(Map<String, dynamic> log) {
     try {
-      final start = DateTime.parse(log['start_time']);
-      final end = DateTime.parse(log['end_time']);
+      final start = DateTime.parse(log['start_time']).toLocal();
+      final end = DateTime.parse(log['end_time']).toLocal();
       final diff = end.difference(start);
       final hours = diff.inHours;
       final minutes = diff.inMinutes % 60;
@@ -186,8 +186,8 @@ class _SleepScreenState extends State<SleepScreen> {
 
   String _formatTimeRange(Map<String, dynamic> log) {
     try {
-      final start = DateTime.parse(log['start_time']);
-      final end = DateTime.parse(log['end_time']);
+      final start = DateTime.parse(log['start_time']).toLocal();
+      final end = DateTime.parse(log['end_time']).toLocal();
       final startStr = DateFormat('h:mm a').format(start);
       final endStr = DateFormat('h:mm a').format(end);
       return '$startStr - $endStr';
@@ -390,6 +390,15 @@ class _SleepScreenState extends State<SleepScreen> {
   }
 
   Widget _buildSleepCard(Map<String, dynamic> log) {
+    final notes = log['notes']?.toString().trim();
+
+    // Get the date from start_time
+    String dateStr = '';
+    try {
+      final start = DateTime.parse(log['start_time']).toLocal();
+      dateStr = DateFormat('MMM d').format(start);
+    } catch (_) {}
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -418,9 +427,23 @@ class _SleepScreenState extends State<SleepScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  'Quality: ${log['quality'] ?? '--'}',
+                  '$dateStr • Quality: ${log['quality'] ?? '--'}',
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
+                if (notes != null && notes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      notes,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
               ],
             ),
           ),

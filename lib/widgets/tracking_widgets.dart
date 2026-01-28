@@ -249,7 +249,17 @@ class TrackingDateField extends StatelessWidget {
             },
           );
           if (date != null) {
-            onDateSelected(date);
+            // Combine selected date with current time so the log has accurate timing
+            final now = DateTime.now();
+            final dateWithTime = DateTime(
+              date.year,
+              date.month,
+              date.day,
+              now.hour,
+              now.minute,
+              now.second,
+            );
+            onDateSelected(dateWithTime);
           }
         },
         borderRadius: BorderRadius.circular(12),

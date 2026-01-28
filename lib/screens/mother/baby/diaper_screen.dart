@@ -137,7 +137,7 @@ class _DiaperScreenState extends State<DiaperScreen> {
   String _formatTime(String? isoTime) {
     if (isoTime == null) return '';
     try {
-      final dt = DateTime.parse(isoTime);
+      final dt = DateTime.parse(isoTime).toLocal();
       return DateFormat('MMM d, h:mm a').format(dt);
     } catch (_) {
       return '';
@@ -384,6 +384,7 @@ class _DiaperScreenState extends State<DiaperScreen> {
       (t) => t['value'] == type,
       orElse: () => _diaperTypes.first,
     );
+    final notes = log['notes']?.toString().trim();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -419,6 +420,20 @@ class _DiaperScreenState extends State<DiaperScreen> {
                   _formatTime(log['time']),
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
+                if (notes != null && notes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      notes,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
               ],
             ),
           ),

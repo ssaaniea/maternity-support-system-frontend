@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
@@ -62,12 +60,18 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     try {
       final response = await ApiService().get('/mother/me/mood-logs');
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.data);
+        final data = response.data;
         if (data is List) {
           _moodLogs = List<Map<String, dynamic>>.from(data);
-        } else if (data['data'] is List) {
+        } else if (data is Map && data['data'] is List) {
           _moodLogs = List<Map<String, dynamic>>.from(data['data']);
         }
+        // Sort by date descending (most recent first)
+        _moodLogs.sort((a, b) {
+          final dateA = DateTime.tryParse(a['date'] ?? '') ?? DateTime(1970);
+          final dateB = DateTime.tryParse(b['date'] ?? '') ?? DateTime(1970);
+          return dateB.compareTo(dateA);
+        });
       }
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
@@ -364,7 +368,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
 
   Widget _buildMoodCard(Map<String, dynamic> log) {
     final mood = _getMoodData(log['mood'] ?? 'happy');
-    final date = DateTime.tryParse(log['date'] ?? '');
+    final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -404,7 +408,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             ),
           ),
           Text(
-            date != null ? DateFormat('MMM d').format(date) : '',
+            date != null ? DateFormat('MMM d, h:mm a').format(date) : '',
             style: TextStyle(color: Colors.grey[400], fontSize: 11),
           ),
         ],
@@ -413,17 +417,19 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          Icon(Iconsax.emoji_happy, size: 48, color: Colors.grey[300]),
-          const SizedBox(height: 12),
-          Text(
-            'Start tracking your mood',
-            style: TextStyle(color: Colors.grey[500]),
-          ),
-        ],
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Icon(Iconsax.emoji_happy, size: 48, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text(
+              'Start tracking your mood',
+              style: TextStyle(color: Colors.grey[500]),
+            ),
+          ],
+        ),
       ),
     );
   }

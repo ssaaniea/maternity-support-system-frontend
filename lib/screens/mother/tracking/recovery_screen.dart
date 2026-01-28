@@ -412,8 +412,12 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddLogDialog,
-        icon: const Icon(Icons.add),
-        label: const Text("Log Recovery"),
+
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Log Recovery",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.pink,
       ),
       body: Container(
@@ -460,7 +464,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       itemCount: _recoveryLogs.length,
       itemBuilder: (context, index) {
         final log = _recoveryLogs[index];
-        final date = DateTime.tryParse(log['date'] ?? '');
+        final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
         final dateStr = date != null
             ? DateFormat('MMM d, yyyy').format(date)
             : "Unknown";

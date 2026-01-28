@@ -1,18 +1,11 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
-import 'package:project_frontend/screens/mother/explore/article_details_screem.dart';
 import 'package:project_frontend/screens/mother/explore/widgets/article_list_card.dart';
-import 'package:project_frontend/screens/mother/explore/widgets/article_thumbnail.dart';
 import 'package:project_frontend/screens/mother/explore/widgets/empty_state_widget.dart';
 import 'package:project_frontend/screens/mother/explore/widgets/featured_article_card.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -32,10 +25,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   String? _selectedCategory;
   String? _selectedStage;
-  final TextEditingController _searchController = TextEditingController();
-
-  // Debounce timer for search
-  Timer? _debounce;
 
   // Scroll controller for pagination
   final ScrollController _scrollController = ScrollController();
@@ -72,8 +61,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _debounce?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -141,9 +128,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     if (_selectedStage != null) {
       queryParams['stage'] = _selectedStage!;
     }
-    if (_searchController.text.isNotEmpty) {
-      queryParams['search'] = _searchController.text;
-    }
 
     final uri = Uri.parse('$kBaseRoute/article').replace(
       queryParameters: queryParams.isEmpty ? null : queryParams,
@@ -154,7 +138,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Future<void> _fetchArticles() async {
     try {
-      final response = await ApiService().get('/article');
+      // Build query params for filtering
+      final queryParams = <String, String>{};
+      if (_selectedCategory != null) {
+        queryParams['category'] = _selectedCategory!;
+      }
+      if (_selectedStage != null) {
+        queryParams['stage'] = _selectedStage!;
+      }
+
+      final queryString = queryParams.isNotEmpty
+          ? '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}'
+          : '';
+
+      final response = await ApiService().get('/article$queryString');
 
       if (response.statusCode == 200 && mounted) {
         final data = response.data as List;
@@ -167,19 +164,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  void _onSearchChanged(String value) {
-    // Debounce search to avoid too many API calls
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchArticles();
-    });
-  }
-
   void _clearFilters() {
     setState(() {
       _selectedCategory = null;
       _selectedStage = null;
-      _searchController.clear();
     });
     _fetchArticles();
   }
@@ -220,9 +208,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // Search Bar
-            SliverToBoxAdapter(child: _buildSearchSection()),
-
             // Stage Filter
             SliverToBoxAdapter(child: _buildStageFilter()),
 
@@ -236,7 +221,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
             // Featured Articles
             if (_selectedCategory == null &&
                 _selectedStage == null &&
-                _searchController.text.isEmpty &&
                 _featuredArticles.isNotEmpty)
               SliverToBoxAdapter(child: _buildFeaturedSection()),
 
@@ -274,41 +258,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSearchSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: "Search articles...",
-          prefixIcon: const Icon(Iconsax.search_normal_1),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Iconsax.close_circle),
-                  onPressed: () {
-                    _searchController.clear();
-                    _fetchArticles();
-                  },
-                )
-              : null,
-          filled: true,
-          fillColor: Colors.grey[100],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        onChanged: _onSearchChanged,
-        onSubmitted: (_) => _fetchArticles(),
       ),
     );
   }

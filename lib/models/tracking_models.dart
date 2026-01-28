@@ -15,7 +15,7 @@ class WeightLog {
     return WeightLog(
       id: json['_id'],
       weight: (json['weight_kg'] as num).toDouble(),
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date']).toLocal(),
       notes: json['notes'],
     );
   }
@@ -47,7 +47,7 @@ class SymptomLog {
   factory SymptomLog.fromJson(Map<String, dynamic> json) {
     return SymptomLog(
       id: json['_id'],
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date']).toLocal(),
       symptoms: List<String>.from(json['symptoms'] ?? []),
       mood: json['mood'],
       notes: json['notes'],
@@ -92,8 +92,8 @@ class KickCountLog {
   factory KickCountLog.fromJson(Map<String, dynamic> json) {
     return KickCountLog(
       id: json['_id'],
-      date: DateTime.parse(json['date']),
-      startTime: DateTime.parse(json['start_time']),
+      date: DateTime.parse(json['date']).toLocal(),
+      startTime: DateTime.parse(json['start_time']).toLocal(),
       kickCount: json['kick_count'],
       durationMinutes: json['duration_minutes'],
       durationSeconds: json['duration_seconds'],
@@ -147,7 +147,7 @@ class CheckupLog {
   factory CheckupLog.fromJson(Map<String, dynamic> json) {
     return CheckupLog(
       id: json['_id'],
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date']).toLocal(),
       weekNumber: json['week_number'],
       doctorName: json['doctor_name'],
       hospitalName: json['hospital_name'],
@@ -158,7 +158,7 @@ class CheckupLog {
       babyHeartRate: json['baby_heart_rate'],
       notes: json['notes'],
       nextCheckupDate: json['next_checkup_date'] != null
-          ? DateTime.parse(json['next_checkup_date'])
+          ? DateTime.parse(json['next_checkup_date']).toLocal()
           : null,
     );
   }

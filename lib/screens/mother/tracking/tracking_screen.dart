@@ -90,7 +90,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         // Weight logs
         final weightLogs = profile['weight_logs'] as List? ?? [];
         for (var log in weightLogs) {
-          final date = DateTime.tryParse(log['date'] ?? '');
+          final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
           if (date != null) {
             entries.add(
               JournalEntry(
@@ -108,7 +108,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         // Symptom logs
         final symptomLogs = profile['symptom_logs'] as List? ?? [];
         for (var log in symptomLogs) {
-          final date = DateTime.tryParse(log['date'] ?? '');
+          final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
           if (date != null) {
             final symptoms = (log['symptoms'] as List?)?.join(', ') ?? '';
             entries.add(
@@ -127,7 +127,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         // Kick counts
         final kickCounts = profile['kick_counts'] as List? ?? [];
         for (var log in kickCounts) {
-          final date = DateTime.tryParse(log['date'] ?? '');
+          final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
           if (date != null) {
             entries.add(
               JournalEntry(
@@ -145,7 +145,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         // Checkup logs
         final checkupLogs = profile['checkup_logs'] as List? ?? [];
         for (var log in checkupLogs) {
-          final date = DateTime.tryParse(log['date'] ?? '');
+          final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
           if (date != null) {
             entries.add(
               JournalEntry(
@@ -163,7 +163,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         // Recovery logs
         final recoveryLogs = profile['recovery_logs'] as List? ?? [];
         for (var log in recoveryLogs) {
-          final date = DateTime.tryParse(log['date'] ?? '');
+          final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
           if (date != null) {
             entries.add(
               JournalEntry(

@@ -5,6 +5,7 @@ import 'package:project_frontend/providers/user_stage_provider.dart';
 import 'package:project_frontend/screens/mother/home/widgets/postnatal_visual.dart';
 import 'package:project_frontend/screens/mother/home/widgets/pregnancy_tracker.dart';
 import 'package:project_frontend/screens/mother/home/widgets/pregnancy_visual.dart';
+import 'package:project_frontend/screens/mother/home/widgets/error_placeholder.dart';
 import 'package:project_frontend/screens/mother/home/widgets/no_baby_placeholder.dart';
 import 'package:project_frontend/screens/mother/home/widgets/recovery_tracker.dart';
 import 'package:project_frontend/screens/mother/home/widgets/sos_quick_access.dart';
@@ -69,6 +70,40 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
+        // Handle network errors
+        if (provider.hasError) {
+          return Scaffold(
+            body: Container(
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFFCE4EC),
+                    const Color(0xFFE1BEE7),
+                    const Color(0xFFE8EAF6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: ErrorPlaceholder(
+                      errorMessage: provider.errorMessage,
+                      onRetry: () {
+                        context.read<UserStageProvider>().loadProfile();
+                        context.read<HomeProvider>().fetchAdditionalStats();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
         // Handle case where profile doesn't exist (404)
         if (provider.profileNotFound) {
           // Schedule navigation to signup details screen after build
@@ -109,9 +144,17 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
 
-        final babyAgeWeeks = hasBaby
-            ? context.read<HomeProvider>().getBabyAgeWeeks()
-            : 0;
+        // Calculate baby age from selected baby's birth_date
+        int babyAgeWeeks = 0;
+        if (hasBaby && provider.selectedBaby != null) {
+          final dob = provider.selectedBaby?['birth_date'];
+          if (dob != null) {
+            final birthDate = DateTime.tryParse(dob.toString());
+            if (birthDate != null) {
+              babyAgeWeeks = DateTime.now().difference(birthDate).inDays ~/ 7;
+            }
+          }
+        }
 
         return Scaffold(
           extendBodyBehindAppBar: true,
@@ -155,6 +198,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onChanged: (String? newValue) {
                         if (newValue != null) {
                           provider.selectBaby(newValue);
+                          // Force refresh baby stats when baby changes
+                          context.read<HomeProvider>().clearBabyStatsCache();
+                          context.read<HomeProvider>().loadBabyStats(
+                            newValue,
+                            forceRefresh: true,
+                          );
                         }
                       },
                     ),

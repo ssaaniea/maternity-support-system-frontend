@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:project_frontend/apiService.dart';
 
 class AllBookingsScreen extends StatefulWidget {
   final List<Map<String, dynamic>> bookings;
@@ -152,104 +153,548 @@ class _AllBookingsScreenState extends State<AllBookingsScreen> {
     );
   }
 
+  void _showBookingDetails(Map<String, dynamic> booking) {
+    final caregiver = booking['caregiver'] as Map<String, dynamic>? ?? {};
+    final status = booking['status'] ?? 'pending';
+    final review = booking['review'] as Map<String, dynamic>?;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Header with caregiver info
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.pink.shade50,
+                      child: Text(
+                        (caregiver['name'] ?? 'C')[0].toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.pink.shade400,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            caregiver['name'] ?? 'Caregiver',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Iconsax.call,
+                                size: 14,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                caregiver['phone_no'] ?? 'N/A',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildStatusBadge(status),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // Booking Details
+                const Text(
+                  "Booking Details",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                _buildDetailRow(
+                  Iconsax.calendar,
+                  "Dates",
+                  "${_formatDate(booking['start_date'])} - ${_formatDate(booking['end_date'])}",
+                ),
+                _buildDetailRow(
+                  Iconsax.clock,
+                  "Shift",
+                  (booking['shift'] ?? 'N/A').toString().toUpperCase(),
+                ),
+                _buildDetailRow(
+                  Iconsax.money,
+                  "Total Amount",
+                  "₹${booking['total_amount'] ?? 0}",
+                ),
+                if (booking['accommodation'] != null)
+                  _buildDetailRow(
+                    Iconsax.home,
+                    "Accommodation",
+                    booking['accommodation'].toString().toUpperCase(),
+                  ),
+                if (booking['address'] != null &&
+                    booking['address'].toString().isNotEmpty)
+                  _buildDetailRow(
+                    Iconsax.location,
+                    "Address",
+                    booking['address'],
+                  ),
+                if (booking['notes'] != null &&
+                    booking['notes'].toString().isNotEmpty)
+                  _buildDetailRow(Iconsax.note_1, "Notes", booking['notes']),
+
+                const SizedBox(height: 24),
+
+                // Review section
+                if (review != null) ...[
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Your Review",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: List.generate(5, (i) {
+                      final rating = review['rating'] ?? 0;
+                      return Icon(
+                        i < rating ? Iconsax.star1 : Iconsax.star,
+                        size: 24,
+                        color: Colors.amber,
+                      );
+                    }),
+                  ),
+                  if (review['comment'] != null &&
+                      review['comment'].toString().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      review['comment'],
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ] else if (status == 'completed') ...[
+                  // Show add review button for completed bookings
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showAddReviewDialog(booking);
+                      },
+                      icon: const Icon(Iconsax.star),
+                      label: const Text("Add Review"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.pink),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddReviewDialog(Map<String, dynamic> booking) {
+    int selectedRating = 0;
+    final commentController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                const Text(
+                  "Rate Your Experience",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "How was your experience with ${(booking['caregiver'] as Map<String, dynamic>?)?['name'] ?? 'the caregiver'}?",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Star Rating
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) {
+                      return GestureDetector(
+                        onTap: () =>
+                            setModalState(() => selectedRating = i + 1),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            i < selectedRating ? Iconsax.star1 : Iconsax.star,
+                            size: 40,
+                            color: Colors.amber,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Comment field
+                TextField(
+                  controller: commentController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: "Write a comment (optional)",
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: selectedRating > 0
+                        ? () => _submitReview(
+                            booking['_id'],
+                            selectedRating,
+                            commentController.text,
+                          )
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pink,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      "Submit Review",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitReview(
+    String? bookingId,
+    int rating,
+    String comment,
+  ) async {
+    if (bookingId == null) return;
+
+    Navigator.pop(context); // Close the dialog
+
+    // Show loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Submitting review...")),
+    );
+
+    try {
+      final response = await ApiService().post(
+        '/caregiver-booking/$bookingId/review',
+        body: {'rating': rating, 'comment': comment},
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Review submitted successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh bookings - the parent needs to handle this
+      } else {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message ?? "Failed to submit review"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Error submitting review"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Widget _buildBookingCard(Map<String, dynamic> booking) {
     final caregiver = booking['caregiver'] as Map<String, dynamic>? ?? {};
     final status = booking['status'] ?? 'pending';
     final startDate = _formatDate(booking['start_date']);
     final endDate = _formatDate(booking['end_date']);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.pink.shade50,
-                child: Text(
-                  (caregiver['name'] ?? 'C')[0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.pink.shade400,
+    return GestureDetector(
+      onTap: () => _showBookingDetails(booking),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.pink.shade50,
+                  child: Text(
+                    (caregiver['name'] ?? 'C')[0].toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.pink.shade400,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      caregiver['name'] ?? 'Caregiver',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "${caregiver['shift']?.toString().toUpperCase() ?? 'N/A'} SHIFT",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildStatusBadge(status),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Details
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Iconsax.calendar, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 6),
                       Text(
-                        "$startDate - $endDate",
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        caregiver['name'] ?? 'Caregiver',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "${caregiver['shift']?.toString().toUpperCase() ?? 'N/A'} SHIFT",
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  "₹${booking['total_amount'] ?? 0}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.pink,
-                  ),
-                ),
+                _buildStatusBadge(status),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            // Details
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Iconsax.calendar,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "$startDate - $endDate",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    "₹${booking['total_amount'] ?? 0}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.pink,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Show rating if reviewed
+            if (booking['review'] != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  ...List.generate(5, (i) {
+                    final rating = booking['review']['rating'] ?? 0;
+                    return Icon(
+                      i < rating ? Iconsax.star1 : Iconsax.star,
+                      size: 16,
+                      color: Colors.amber,
+                    );
+                  }),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Reviewed",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

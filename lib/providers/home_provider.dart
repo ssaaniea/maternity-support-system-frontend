@@ -40,6 +40,16 @@ class HomeProvider extends ChangeNotifier {
   // Cache tracking
   String? _lastFetchedBabyId;
 
+  /// Clear baby stats cache - call when switching babies
+  void clearBabyStatsCache() {
+    _lastFetchedBabyId = null;
+    _todayFeedCount = 0;
+    _lastFeedTime = null;
+    _todaySleepHours = 0;
+    _todayDiaperCount = 0;
+    notifyListeners();
+  }
+
   // Helper methods from HomeScreen
   int getWeeksRemaining(int? currentWeek) {
     if (currentWeek == null) return 0;
@@ -111,11 +121,15 @@ class HomeProvider extends ChangeNotifier {
   }
 
   // Load stats for a specific baby
-  Future<void> loadBabyStats(String babyId) async {
-    if (babyId == _lastFetchedBabyId && _todayFeedCount > 0) {
-      return; // cache check
+  Future<void> loadBabyStats(String babyId, {bool forceRefresh = false}) async {
+    // Skip fetch only if same baby and not forcing refresh
+    if (!forceRefresh && babyId == _lastFetchedBabyId) {
+      return; // cache check - already loaded for this baby
     }
     _lastFetchedBabyId = babyId;
+    debugPrint(
+      'HomeProvider: Loading stats for baby $babyId (force: $forceRefresh)',
+    );
 
     try {
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -141,9 +155,14 @@ class HomeProvider extends ChangeNotifier {
             : <dynamic>[];
 
         for (var feed in feeds) {
-          if (feed['start_time']?.toString().startsWith(today) == true) {
-            feedCount++;
-            lastFeed ??= feed['start_time'];
+          final startTimeStr = feed['start_time']?.toString();
+          if (startTimeStr != null) {
+            final feedTime = DateTime.parse(startTimeStr).toLocal();
+            final feedDateStr = DateFormat('yyyy-MM-dd').format(feedTime);
+            if (feedDateStr == today) {
+              feedCount++;
+              lastFeed ??= DateFormat('h:mm a').format(feedTime);
+            }
           }
         }
       }
@@ -158,11 +177,15 @@ class HomeProvider extends ChangeNotifier {
             : <dynamic>[];
 
         for (var sleep in sleeps) {
-          if (sleep['start_time']?.toString().startsWith(today) == true &&
-              sleep['end_time'] != null) {
-            final start = DateTime.parse(sleep['start_time']);
-            final end = DateTime.parse(sleep['end_time']);
-            sleepHours += end.difference(start).inMinutes / 60.0;
+          final startTimeStr = sleep['start_time']?.toString();
+          final endTimeStr = sleep['end_time']?.toString();
+          if (startTimeStr != null && endTimeStr != null) {
+            final start = DateTime.parse(startTimeStr).toLocal();
+            final startDateStr = DateFormat('yyyy-MM-dd').format(start);
+            if (startDateStr == today) {
+              final end = DateTime.parse(endTimeStr).toLocal();
+              sleepHours += end.difference(start).inMinutes / 60.0;
+            }
           }
         }
       }
@@ -177,8 +200,13 @@ class HomeProvider extends ChangeNotifier {
             : <dynamic>[];
 
         for (var diaper in diapers) {
-          if (diaper['time']?.toString().startsWith(today) == true) {
-            diaperCount++;
+          final timeStr = diaper['time']?.toString();
+          if (timeStr != null) {
+            final diaperTime = DateTime.parse(timeStr).toLocal();
+            final diaperDateStr = DateFormat('yyyy-MM-dd').format(diaperTime);
+            if (diaperDateStr == today) {
+              diaperCount++;
+            }
           }
         }
       }

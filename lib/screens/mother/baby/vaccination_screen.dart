@@ -58,8 +58,8 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
     }
   }
 
-  bool _isVaccinationDone(String vaccineId) {
-    return _babyVaccinations.any((v) => v['vaccine_id'] == vaccineId);
+  bool _isVaccinationDone(String vaccineName) {
+    return _babyVaccinations.any((v) => v['vaccine_name'] == vaccineName);
   }
 
   Future<void> _markVaccination(Map<String, dynamic> vaccine) async {
@@ -92,9 +92,8 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
       final response = await ApiService().post(
         '/baby/$babyId/vaccination',
         body: {
-          'vaccine_id': vaccine['_id'],
           'vaccine_name': vaccine['name'],
-          'date': DateTime.now().toIso8601String(),
+          'date_given': DateTime.now().toIso8601String(),
         },
       );
 
@@ -150,8 +149,6 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
                   const SizedBox(height: 20),
 
                   // Progress
-                  _buildProgressCard(),
-                  const SizedBox(height: 20),
 
                   // Vaccine list
                   const Text(
@@ -262,7 +259,7 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
   }
 
   Widget _buildVaccineCard(Map<String, dynamic> vaccine) {
-    final isDone = _isVaccinationDone(vaccine['_id']);
+    final isDone = _isVaccinationDone(vaccine['name'] ?? '');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),

@@ -429,6 +429,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildProfileHeader(),
                     const SizedBox(height: 16),
 
+                    // Personal Information Section
+                    _buildInfoSection(),
+                    const SizedBox(height: 16),
+
                     // Account Section
                     _buildSection(
                       title: "Account",
@@ -826,6 +830,166 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  String _formatDateFromString(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return 'Not set';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }
+
+  Widget _buildInfoSection() {
+    if (_profileData == null) return const SizedBox.shrink();
+
+    final status = _profileData!['status'];
+    final isPregnant = status == 'pregnant';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.pink.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Iconsax.info_circle,
+                    color: Colors.pink,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Personal Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Age
+            _buildInfoRow(
+              icon: Iconsax.cake,
+              label: 'Age',
+              value: '${_profileData!['age'] ?? 'Not set'} years',
+            ),
+            const Divider(height: 24),
+
+            // Phone
+            _buildInfoRow(
+              icon: Iconsax.call,
+              label: 'Phone',
+              value: _profileData!['phone_no'] ?? 'Not set',
+            ),
+            const Divider(height: 24),
+
+            // Address
+            _buildInfoRow(
+              icon: Iconsax.location,
+              label: 'Address',
+              value: _profileData!['address'] ?? 'Not set',
+            ),
+
+            // Pregnancy/Postpartum specific info
+            if (isPregnant) ...[
+              const Divider(height: 24),
+              _buildInfoRow(
+                icon: Iconsax.calendar_1,
+                label: 'Expected Delivery',
+                value: _formatDateFromString(
+                  _profileData!['expected_delivery_date'],
+                ),
+              ),
+              const Divider(height: 24),
+              _buildInfoRow(
+                icon: Iconsax.calendar_tick,
+                label: 'Last Menstrual Period',
+                value: _formatDateFromString(_profileData!['last_period_date']),
+              ),
+            ] else ...[
+              const Divider(height: 24),
+              _buildInfoRow(
+                icon: Iconsax.calendar,
+                label: 'Delivery Date',
+                value: _formatDateFromString(
+                  _profileData!['actual_delivery_date'],
+                ),
+              ),
+              if (_profileData!['delivery_type'] != null) ...[
+                const Divider(height: 24),
+                _buildInfoRow(
+                  icon: Iconsax.heart,
+                  label: 'Delivery Type',
+                  value: _profileData!['delivery_type'] ?? 'Not set',
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

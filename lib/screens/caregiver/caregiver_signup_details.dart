@@ -506,7 +506,8 @@ class _CaregiverSignupDetailsState extends State<CaregiverSignupDetails> {
       if (!mounted) return;
 
       if (response.statusCode == 201) {
-        _showSnackBar(data['message'], Colors.green);
+        print('✅ Caregiver profile created, navigating to home...');
+        if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(
             builder: (context) => const CaregiverAppShell(),
@@ -514,6 +515,7 @@ class _CaregiverSignupDetailsState extends State<CaregiverSignupDetails> {
           (Route<dynamic> route) => false,
         );
       } else {
+        print('❌ Profile creation failed: ${response.statusCode}');
         _showSnackBar(data['message'] ?? 'Profile creation failed', Colors.red);
       }
     } catch (e) {

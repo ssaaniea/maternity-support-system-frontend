@@ -66,7 +66,7 @@ class _SignupScreenState extends State<SignupScreen> {
       print(response.body);
 
       if (response.statusCode == 201) {
-        await prefs.setString('token', data['token']);
+        await prefs.setString('jwt_token', data['token']);
         await prefs.setString('userId', data['data']['id']);
         await prefs.setString('role', data['data']['role']);
         await prefs.setString('email', data['data']['email']);

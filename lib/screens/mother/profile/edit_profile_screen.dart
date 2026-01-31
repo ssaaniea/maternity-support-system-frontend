@@ -1,11 +1,8 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:http/http.dart' as http;
 import 'package:project_frontend/apiService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:project_frontend/constants.dart';
 
 class EditProfileService {
   static Future<Map<String, String>> _getHeaders() async {
@@ -48,10 +45,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _ageController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
-  late TextEditingController _deliveryDateController;
+
+  DateTime? _expectedDeliveryDate;
+  // DateTime? _lastPeriodDate;
 
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -68,9 +81,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _addressController = TextEditingController(
       text: widget.profileData['address'] ?? '',
     );
-    _deliveryDateController = TextEditingController(
-      text: widget.profileData['expected_delivery_date'] ?? '',
+
+    _expectedDeliveryDate = _parseDate(
+      widget.profileData['expected_delivery_date'],
     );
+    // _lastPeriodDate = _parseDate(widget.profileData['last_period_date']);
   }
 
   @override
@@ -79,23 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _ageController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
-    _deliveryDateController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectDate(TextEditingController controller) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.tryParse(controller.text) ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) {
-      setState(() {
-        controller.text =
-            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-      });
-    }
   }
 
   Future<void> _saveProfile() async {
@@ -108,7 +107,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'age': int.parse(_ageController.text),
       'phone_no': _phoneController.text.trim(),
       'address': _addressController.text.trim(),
-      'expected_delivery_date': _deliveryDateController.text.trim(),
     };
 
     final success = await EditProfileService.updateProfile(data);
@@ -205,20 +203,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Delivery Date Field
-                _buildTextField(
-                  label: 'Expected Delivery Date',
-                  controller: _deliveryDateController,
-                  icon: Iconsax.calendar_1,
-                  readOnly: true,
-                  onTap: () => _selectDate(_deliveryDateController),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true)
-                      return 'Delivery date is required';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
+                // Expected Delivery Date (for pregnant users)
+                // if (widget.profileData['status'] == 'pregnant') ...[
+                //   _buildDateField(
+                //     label: 'Expected Delivery Date',
+                //     value: _expectedDeliveryDate,
+                //     icon: Iconsax.calendar_1,
+                //     onTap: _selectExpectedDeliveryDate,
+                //   ),
+                //   const SizedBox(height: 16),
+
+                //   // Last Period Date
+                //   // _buildDateField(
+                //   //   label: 'Last Menstrual Period',
+                //   //   value: _lastPeriodDate,
+                //   //   icon: Iconsax.calendar_tick,
+                //   //   onTap: _selectLastPeriodDate,
+                //   // ),
+                //   // const SizedBox(height: 16),
+                // ],
+                // const SizedBox(height: 16),
 
                 // Save Button
                 SizedBox(
@@ -295,6 +299,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 16,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFE91E63)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value != null ? _formatDate(value) : 'Tap to select',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: value != null ? Colors.black87 : Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.calendar_today, color: Colors.grey[400], size: 20),
+          ],
         ),
       ),
     );

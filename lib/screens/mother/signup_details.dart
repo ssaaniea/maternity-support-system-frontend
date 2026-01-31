@@ -88,28 +88,28 @@ class _SignupDetailsState extends State<SignupDetails> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 18,
-                color: _primaryPink,
-              ),
-            ),
-          ),
+          // IconButton(
+          //   onPressed: () => Navigator.pop(context),
+          //   icon: Container(
+          //     padding: const EdgeInsets.all(8),
+          //     decoration: BoxDecoration(
+          //       color: Colors.white.withOpacity(0.9),
+          //       borderRadius: BorderRadius.circular(12),
+          //       boxShadow: [
+          //         BoxShadow(
+          //           color: Colors.black.withOpacity(0.1),
+          //           blurRadius: 8,
+          //           offset: const Offset(0, 2),
+          //         ),
+          //       ],
+          //     ),
+          //     child: const Icon(
+          //       Icons.arrow_back_ios_new,
+          //       size: 18,
+          //       color: _primaryPink,
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );
@@ -629,7 +629,8 @@ class _SignupDetailsState extends State<SignupDetails> {
       if (!mounted) return;
 
       if (response.statusCode == 201) {
-        _showSnackBar(data['message'], Colors.green);
+        print('✅ Profile created successfully, navigating to home...');
+        if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(
             builder: (context) => const MotherAppShell(),
@@ -637,6 +638,7 @@ class _SignupDetailsState extends State<SignupDetails> {
           (Route<dynamic> route) => false,
         );
       } else {
+        print('❌ Profile creation failed: ${response.statusCode}');
         _showSnackBar(data['message'] ?? 'Signup failed', Colors.red);
       }
     } catch (e) {

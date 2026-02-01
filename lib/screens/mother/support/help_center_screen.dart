@@ -11,7 +11,7 @@ class HelpCenterScreen extends StatefulWidget {
 
 class _HelpCenterScreenState extends State<HelpCenterScreen> {
   final String contactEmail = 'support@maternalhealth.com';
-  final String contactPhone = '+1 (555) 123-4567';
+  final String contactPhone = '+91 9207538044';
 
   final List<FAQItem> faqs = [
     FAQItem(

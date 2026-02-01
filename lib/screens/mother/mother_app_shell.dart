@@ -56,7 +56,12 @@ class _MotherAppShellState extends State<MotherAppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_bottomNavIndex],
+      // Use IndexedStack to preserve screen state when switching tabs
+      // This prevents HomeScreen from being rebuilt when returning to it
+      body: IndexedStack(
+        index: _bottomNavIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,

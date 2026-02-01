@@ -5,6 +5,7 @@ import 'package:project_frontend/apiService.dart';
 /// and baby data. Wrap your app with ChangeNotifierProvider<UserStageProvider>
 class UserStageProvider extends ChangeNotifier {
   bool _isLoading = true;
+  bool _isInitialLoad = true; // First load vs refresh
   bool _isPregnant = true;
   bool _profileNotFound = false;
   String? _errorMessage;
@@ -14,6 +15,7 @@ class UserStageProvider extends ChangeNotifier {
 
   // Getters
   bool get isLoading => _isLoading;
+  bool get isInitialLoad => _isInitialLoad; // True only on first load
   bool get isPregnant => _isPregnant;
   bool get isPostpartum => !_isPregnant;
   bool get profileNotFound => _profileNotFound;
@@ -110,6 +112,7 @@ class UserStageProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
+    _isInitialLoad = false; // After first load, this stays false
     notifyListeners();
   }
 
@@ -130,8 +133,13 @@ class UserStageProvider extends ChangeNotifier {
           _babies = List<Map<String, dynamic>>.from(data);
           debugPrint("UserStageProvider: Loaded ${_babies.length} babies");
 
-          // Auto-select first baby if none selected
-          if (_babies.isNotEmpty && _selectedBabyId == null) {
+          // Validate selectedBabyId exists in the list, or reset it
+          if (_babies.isEmpty) {
+            _selectedBabyId = null;
+            debugPrint("UserStageProvider: No babies, clearing selectedBabyId");
+          } else if (_selectedBabyId == null ||
+              !_babies.any((b) => b['_id'] == _selectedBabyId)) {
+            // Auto-select first baby if none selected or if current selection is invalid
             _selectedBabyId = _babies.first['_id'];
             debugPrint(
               "UserStageProvider: Auto-selected baby ID: $_selectedBabyId",

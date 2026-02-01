@@ -152,6 +152,60 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     );
   }
 
+  Future<void> _deleteMood(String logId) async {
+    try {
+      final response = await ApiService().delete('/mother/me/mood-logs/$logId');
+      if (response.statusCode == 200) {
+        await _loadMoodLogs();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Iconsax.trash, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Mood log deleted'),
+                ],
+              ),
+              backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error deleting mood: $e');
+    }
+  }
+
+  Future<bool?> _showDeleteConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Mood Log?'),
+        content: const Text('This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -190,7 +244,11 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             else if (_moodLogs.isEmpty)
               _buildEmptyState()
             else
-              ..._moodLogs.take(15).map(_buildMoodCard),
+              ..._moodLogs
+                  .asMap()
+                  .entries
+                  .take(15)
+                  .map((entry) => _buildMoodCard(entry.value, entry.key)),
           ],
         ),
       ),
@@ -366,52 +424,73 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     );
   }
 
-  Widget _buildMoodCard(Map<String, dynamic> log) {
+  Widget _buildMoodCard(Map<String, dynamic> log, int index) {
     final mood = _getMoodData(log['mood'] ?? 'happy');
     final date = DateTime.tryParse(log['date'] ?? '')?.toLocal();
+    final logId = log['_id']?.toString();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+    return Dismissible(
+      key: Key(logId ?? index.toString()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) => _showDeleteConfirmation(),
+      onDismissed: (direction) {
+        if (logId != null) {
+          _deleteMood(logId);
+        }
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.red[400],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Icon(Iconsax.trash, color: Colors.white),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: (mood['color'] as Color).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (mood['color'] as Color).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(mood['emoji'], style: const TextStyle(fontSize: 22)),
             ),
-            child: Text(mood['emoji'], style: const TextStyle(fontSize: 22)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  mood['label'],
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                if (log['notes']?.isNotEmpty == true)
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    log['notes'],
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    mood['label'],
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-              ],
+                  if (log['notes']?.isNotEmpty == true)
+                    Text(
+                      log['notes'],
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            date != null ? DateFormat('MMM d, h:mm a').format(date) : '',
-            style: TextStyle(color: Colors.grey[400], fontSize: 11),
-          ),
-        ],
+            Text(
+              date != null ? DateFormat('MMM d, h:mm a').format(date) : '',
+              style: TextStyle(color: Colors.grey[400], fontSize: 11),
+            ),
+          ],
+        ),
       ),
     );
   }

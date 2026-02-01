@@ -125,6 +125,72 @@ class _CheckupScreenState extends State<CheckupScreen> {
     }
   }
 
+  Future<void> _deleteCheckup(String logId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("jwt_token");
+      if (token == null) return;
+
+      final url = Uri.parse('$kBaseRoute/mother/me/checkups/$logId');
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _fetchCheckups();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Iconsax.trash, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("Checkup deleted"),
+                ],
+              ),
+              backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error deleting checkup: $e");
+    }
+  }
+
+  Future<bool?> _showDeleteConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Checkup?'),
+        content: const Text('This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddDialog() {
     final doctorController = TextEditingController();
     final hospitalController = TextEditingController();
@@ -394,7 +460,7 @@ class _CheckupScreenState extends State<CheckupScreen> {
               padding: const EdgeInsets.all(16),
               itemCount: _logs.length,
               itemBuilder: (context, index) {
-                return _buildCheckupCard(_logs[index]);
+                return _buildCheckupCard(_logs[index], index);
               },
             ),
     );
@@ -425,211 +491,235 @@ class _CheckupScreenState extends State<CheckupScreen> {
     );
   }
 
-  Widget _buildCheckupCard(CheckupLog log) {
+  Widget _buildCheckupCard(CheckupLog log, int index) {
     final dateStr = DateFormat('EEEE, MMM d, yyyy').format(log.date);
     final hasNextCheckup = log.nextCheckupDate != null;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return Dismissible(
+      key: Key(log.id ?? index.toString()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) => _showDeleteConfirmation(),
+      onDismissed: (direction) {
+        if (log.id != null) {
+          _deleteCheckup(log.id!);
+        }
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.red[400],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Icon(Iconsax.trash, color: Colors.white),
       ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.05),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Iconsax.hospital,
-                    color: Colors.green,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Dr. ${log.doctorName ?? 'Unknown'}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        log.hospitalName ?? "Hospital",
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Iconsax.tick_circle, color: Colors.green, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        "Done",
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Date
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Icon(Iconsax.calendar_1, size: 16, color: Colors.grey[500]),
-                const SizedBox(width: 8),
-                Text(
-                  dateStr,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Health stats
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildStatChip(
-                  icon: Iconsax.weight,
-                  value: log.weight != null ? "${log.weight} kg" : "-",
-                  color: Colors.teal,
-                ),
-                const SizedBox(width: 8),
-                _buildStatChip(
-                  icon: Iconsax.heart,
-                  value: log.babyHeartRate != null
-                      ? "${log.babyHeartRate} bpm"
-                      : "-",
-                  color: Colors.pink,
-                ),
-                const SizedBox(width: 8),
-                _buildStatChip(
-                  icon: Iconsax.activity,
-                  value: log.bloodPressure ?? "-",
-                  color: Colors.orange,
-                ),
-              ],
-            ),
-          ),
-          // Notes
-          if (log.notes != null && log.notes!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Iconsax.note_1, size: 16, color: Colors.grey[500]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        log.notes!,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 13,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Next checkup
-          if (hasNextCheckup)
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: Colors.green.withOpacity(0.05),
                 borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(20),
+                  top: Radius.circular(20),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Iconsax.calendar_tick,
-                    size: 18,
-                    color: Colors.blue[700],
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Iconsax.hospital,
+                      color: Colors.green,
+                      size: 22,
+                    ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Dr. ${log.doctorName ?? 'Unknown'}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          log.hospitalName ?? "Hospital",
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Iconsax.tick_circle,
+                          color: Colors.green,
+                          size: 14,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          "Done",
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Date
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Iconsax.calendar_1, size: 16, color: Colors.grey[500]),
                   const SizedBox(width: 8),
                   Text(
-                    "Next Checkup: ",
+                    dateStr,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 13,
                     ),
                   ),
-                  Text(
-                    DateFormat('MMM d, yyyy').format(log.nextCheckupDate!),
-                    style: TextStyle(
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                ],
+              ),
+            ),
+            // Health stats
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  _buildStatChip(
+                    icon: Iconsax.weight,
+                    value: log.weight != null ? "${log.weight} kg" : "-",
+                    color: Colors.teal,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatChip(
+                    icon: Iconsax.heart,
+                    value: log.babyHeartRate != null
+                        ? "${log.babyHeartRate} bpm"
+                        : "-",
+                    color: Colors.pink,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatChip(
+                    icon: Iconsax.activity,
+                    value: log.bloodPressure ?? "-",
+                    color: Colors.orange,
                   ),
                 ],
               ),
-            )
-          else
-            const SizedBox(height: 16),
-        ],
+            ),
+            // Notes
+            if (log.notes != null && log.notes!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Iconsax.note_1, size: 16, color: Colors.grey[500]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          log.notes!,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            // Next checkup
+            if (hasNextCheckup)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Iconsax.calendar_tick,
+                      size: 18,
+                      color: Colors.blue[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Next Checkup: ",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('MMM d, yyyy').format(log.nextCheckupDate!),
+                      style: TextStyle(
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:project_frontend/apiService.dart';
 import 'package:project_frontend/constants.dart';
 import 'package:project_frontend/widgets/tracking_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DoctorDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> doctor;
@@ -99,7 +100,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("D1octor Profile"),
+        title: const Text("Doctor Profile"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -252,8 +253,8 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
                     "${c['hospital_id']['address']}",
                   ),
                   const SizedBox(height: 12),
-                  _buildDetailRow(
-                    Iconsax.money,
+                  _buildLocationRow(
+                    Iconsax.location,
                     "Location",
                     "${c['hospital_id']['location']}",
                   ),
@@ -292,6 +293,7 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(10),
@@ -302,20 +304,84 @@ class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
           child: Icon(icon, size: 20, color: Colors.grey[700]),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-            ),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLocationRow(IconData icon, String label, String url) {
+    return InkWell(
+      onTap: () async {
+        if (url.isNotEmpty) {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Could not open location")),
+              );
+            }
+          }
+        }
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: Colors.blue[700]),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      "View on Google Maps",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Colors.blue[700],
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Iconsax.export_1, size: 14, color: Colors.blue[700]),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

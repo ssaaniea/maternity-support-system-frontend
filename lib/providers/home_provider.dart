@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeProvider extends ChangeNotifier {
   bool _isLoading = false;
+  bool _isInitialLoad = true; // First load vs refresh
   bool get isLoading => _isLoading;
+  bool get isInitialLoad => _isInitialLoad;
 
   // Local stats
   double? _latestWeight;
@@ -116,6 +118,7 @@ class HomeProvider extends ChangeNotifier {
       debugPrint("Error fetching home additional stats: $e");
     } finally {
       _isLoading = false;
+      _isInitialLoad = false; // After first load, this stays false
       notifyListeners();
     }
   }

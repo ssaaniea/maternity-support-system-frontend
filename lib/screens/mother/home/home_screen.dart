@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:project_frontend/providers/home_provider.dart';
 import 'package:project_frontend/providers/user_stage_provider.dart';
+import 'package:project_frontend/screens/mother/home/widgets/home_skeleton.dart';
 import 'package:project_frontend/screens/mother/home/widgets/postnatal_visual.dart';
 import 'package:project_frontend/screens/mother/home/widgets/pregnancy_tracker.dart';
 import 'package:project_frontend/screens/mother/home/widgets/pregnancy_visual.dart';
@@ -21,13 +22,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _initialLoadStarted = false;
+
   @override
   void initState() {
     super.initState();
+    // Use addPostFrameCallback to safely access context
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<UserStageProvider>().loadProfile();
-      context.read<HomeProvider>().fetchAdditionalStats();
+      _loadData();
     });
+  }
+
+  /// Load data once on initial mount
+  void _loadData() async {
+    if (_initialLoadStarted) return; // Prevent duplicate calls
+    _initialLoadStarted = true;
+
+    final userProvider = context.read<UserStageProvider>();
+    final homeProvider = context.read<HomeProvider>();
+
+    // Load profile first
+    await userProvider.loadProfile();
+
+    // Then load additional stats
+    await homeProvider.fetchAdditionalStats();
+
+    // If postpartum with baby, load baby stats
+    if (!userProvider.isPregnant &&
+        userProvider.hasBaby &&
+        userProvider.selectedBabyId != null) {
+      await homeProvider.loadBabyStats(userProvider.selectedBabyId!);
+    }
+  }
+
+  /// Refresh data (called from refresh button)
+  void _refreshData() {
+    final userProvider = context.read<UserStageProvider>();
+    final homeProvider = context.read<HomeProvider>();
+    userProvider.loadProfile();
+    homeProvider.fetchAdditionalStats();
   }
 
   String _getGreeting() {
@@ -61,12 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Consumer<UserStageProvider>(
       builder: (context, provider, _) {
-        // We also need HomeProvider for loading state if we want to show global loading
         final homeProvider = context.watch<HomeProvider>();
 
-        if (provider.isLoading || homeProvider.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+        // Show skeleton only on initial load
+        if ((provider.isLoading && provider.isInitialLoad) ||
+            (homeProvider.isLoading && homeProvider.isInitialLoad)) {
+          return Scaffold(
+            body: HomeSkeleton(isPregnant: provider.isPregnant),
           );
         }
 
@@ -133,17 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
         final babies = provider.babies;
         final hasBaby = provider.hasBaby;
 
-        // Trigger baby stats load if needed
-        if (!isPregnant && hasBaby && provider.selectedBabyId != null) {
-          // We can check if we should load in HomeProvider
-          // Defer to next frame to avoid setState during build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<HomeProvider>().loadBabyStats(
-              provider.selectedBabyId!,
-            );
-          });
-        }
-
         // Calculate baby age from selected baby's birth_date
         int babyAgeWeeks = 0;
         if (hasBaby && provider.selectedBaby != null) {
@@ -171,7 +194,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 : DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
-                      value: provider.selectedBabyId,
+                      // Only use selectedBabyId if it exists in babies list
+                      value:
+                          babies.any((b) => b['_id'] == provider.selectedBabyId)
+                          ? provider.selectedBabyId
+                          : null,
                       hint: Text(
                         '${_getGreeting()}, $name',
                         style: const TextStyle(
@@ -209,13 +236,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
             actions: [
-              IconButton(
-                icon: const Icon(Iconsax.refresh, color: Colors.black54),
-                onPressed: () {
-                  context.read<UserStageProvider>().loadProfile();
-                  context.read<HomeProvider>().fetchAdditionalStats();
-                },
-              ),
+              // Show subtle refresh indicator when refreshing (not initial load)
+              if (provider.isLoading && !provider.isInitialLoad)
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                IconButton(
+                  icon: const Icon(Iconsax.refresh, color: Colors.black54),
+                  onPressed: _refreshData,
+                ),
             ],
           ),
           body: Container(

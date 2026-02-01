@@ -142,6 +142,72 @@ class _SymptomScreenState extends State<SymptomScreen> {
     }
   }
 
+  Future<void> _deleteSymptom(String logId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("jwt_token");
+      if (token == null) return;
+
+      final url = Uri.parse('$kBaseRoute/mother/me/symptom-logs/$logId');
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _fetchSymptoms();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Iconsax.trash, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("Symptom log deleted"),
+                ],
+              ),
+              backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error deleting symptom: $e");
+    }
+  }
+
+  Future<bool?> _showDeleteConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Symptom Log?'),
+        content: const Text('This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddDialog() {
     List<String> selectedSymptoms = [];
     String selectedMood = "okay";
@@ -467,7 +533,7 @@ class _SymptomScreenState extends State<SymptomScreen> {
               padding: const EdgeInsets.all(16),
               itemCount: _logs.length,
               itemBuilder: (context, index) {
-                return _buildSymptomCard(_logs[index]);
+                return _buildSymptomCard(_logs[index], index);
               },
             ),
     );
@@ -498,131 +564,151 @@ class _SymptomScreenState extends State<SymptomScreen> {
     );
   }
 
-  Widget _buildSymptomCard(SymptomLog log) {
+  Widget _buildSymptomCard(SymptomLog log, int index) {
     final dateStr = DateFormat('EEEE, MMM d').format(log.date);
     final timeStr = DateFormat('h:mm a').format(log.date);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return Dismissible(
+      key: Key(log.id ?? index.toString()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) => _showDeleteConfirmation(),
+      onDismissed: (direction) {
+        if (log.id != null) {
+          _deleteSymptom(log.id!);
+        }
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.red[400],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Icon(Iconsax.trash, color: Colors.white),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with mood
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.05),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-            child: Row(
-              children: [
-                Text(
-                  _getMoodEmoji(log.mood),
-                  style: const TextStyle(fontSize: 32),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Feeling ${log.mood ?? 'okay'}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "$dateStr • $timeStr",
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Symptoms
-          if (log.symptoms.isNotEmpty)
-            Padding(
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with mood
+            Container(
               padding: const EdgeInsets.all(16),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: log.symptoms.map((symptom) {
-                  final data = _allSymptoms.firstWhere(
-                    (s) => s['name'] == symptom,
-                    orElse: () => {"name": symptom, "icon": "❓"},
-                  );
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.05),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    _getMoodEmoji(log.mood),
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data['icon'],
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          symptom.replaceAll('_', ' '),
+                          "Feeling ${log.mood ?? 'okay'}",
                           style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "$dateStr • $timeStr",
+                          style: TextStyle(
+                            color: Colors.grey[500],
                             fontSize: 12,
-                            color: Colors.purple,
                           ),
                         ),
                       ],
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
             ),
-          // Notes
-          if (log.notes != null && log.notes!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(10),
+            // Symptoms
+            if (log.symptoms.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: log.symptoms.map((symptom) {
+                    final data = _allSymptoms.firstWhere(
+                      (s) => s['name'] == symptom,
+                      orElse: () => {"name": symptom, "icon": "❓"},
+                    );
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            data['icon'],
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            symptom.replaceAll('_', ' '),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.purple,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
-                child: Text(
-                  log.notes!,
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 13,
-                    fontStyle: FontStyle.italic,
+              ),
+            // Notes
+            if (log.notes != null && log.notes!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    log.notes!,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -146,9 +146,11 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
                 children: [
                   // Baby info
                   _buildBabyCard(provider.selectedBaby!),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Progress
+                  _buildProgressCard(),
+                  const SizedBox(height: 20),
 
                   // Vaccine list
                   const Text(
@@ -260,9 +262,11 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
 
   Widget _buildVaccineCard(Map<String, dynamic> vaccine) {
     final isDone = _isVaccinationDone(vaccine['name'] ?? '');
+    final diseaseProtection = vaccine['disease_protection'] as List<dynamic>?;
+    final numberOfDoses = vaccine['number_of_doses'] as int? ?? 1;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -273,6 +277,7 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
@@ -296,13 +301,50 @@ class _VaccinationScreenState extends State<VaccinationScreen> {
                   vaccine['name'] ?? 'Vaccine',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
+                    fontSize: 15,
                     decoration: isDone ? TextDecoration.lineThrough : null,
                   ),
                 ),
+                const SizedBox(height: 4),
                 if (vaccine['recommended_age'] != null)
                   Text(
                     'At ${vaccine['recommended_age']}',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                if (numberOfDoses > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '$numberOfDoses doses required',
+                      style: TextStyle(color: Colors.orange[700], fontSize: 11),
+                    ),
+                  ),
+                if (diseaseProtection != null && diseaseProtection.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: diseaseProtection.take(3).map((disease) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            disease.toString(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.blue[700],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
               ],
             ),

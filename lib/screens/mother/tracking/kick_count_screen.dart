@@ -96,6 +96,72 @@ class _KickCountScreenState extends State<KickCountScreen> {
     }
   }
 
+  Future<void> _deleteKickCount(String logId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("jwt_token");
+      if (token == null) return;
+
+      final url = Uri.parse('$kBaseRoute/mother/me/kick-counts/$logId');
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _fetchKickCounts();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.delete, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("Kick count deleted"),
+                ],
+              ),
+              backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error deleting kick count: $e");
+    }
+  }
+
+  Future<bool?> _showDeleteConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Kick Count?'),
+        content: const Text('This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _startSession() {
     setState(() {
       _isSessionActive = true;
@@ -653,87 +719,110 @@ class _KickCountScreenState extends State<KickCountScreen> {
                       );
                       final statusColor = _getStatusColor(notes.status);
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                      return Dismissible(
+                        key: Key(log.id ?? index.toString()),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (direction) =>
+                            _showDeleteConfirmation(),
+                        onDismissed: (direction) {
+                          if (log.id != null) {
+                            _deleteKickCount(log.id!);
+                          }
+                        },
+                        background: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red[400],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          alignment: Alignment.centerRight,
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        child: InkWell(
-                          onTap: () {
-                            _showKickCountResultsFromLog(
-                              log.kickCount,
-                              durationSeconds,
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: statusColor.withOpacity(0.2),
-                                  child: Icon(
-                                    _getStatusIcon(notes.status),
-                                    color: statusColor,
+                        child: Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                              _showKickCountResultsFromLog(
+                                log.kickCount,
+                                durationSeconds,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: statusColor.withOpacity(
+                                      0.2,
+                                    ),
+                                    child: Icon(
+                                      _getStatusIcon(notes.status),
+                                      color: statusColor,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${log.kickCount} kicks",
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        "${log.date.day}/${log.date.month}/${log.date.year} • ${log.durationMinutes ?? 0} mins",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Chip(
-                                        label: Text(
-                                          notes.status ==
-                                                  KickCountStatus.excellent
-                                              ? 'Excellent'
-                                              : notes.status ==
-                                                    KickCountStatus.good
-                                              ? 'Good'
-                                              : notes.status ==
-                                                    KickCountStatus.monitor
-                                              ? 'Monitor'
-                                              : 'Concerning',
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "${log.kickCount} kicks",
                                           style: const TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                        backgroundColor: statusColor,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
+                                        Text(
+                                          "${log.date.day}/${log.date.month}/${log.date.year} • ${log.durationMinutes ?? 0} mins",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 4),
+                                        Chip(
+                                          label: Text(
+                                            notes.status ==
+                                                    KickCountStatus.excellent
+                                                ? 'Excellent'
+                                                : notes.status ==
+                                                      KickCountStatus.good
+                                                ? 'Good'
+                                                : notes.status ==
+                                                      KickCountStatus.monitor
+                                                ? 'Monitor'
+                                                : 'Concerning',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          backgroundColor: statusColor,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Colors.grey.shade400,
-                                ),
-                              ],
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

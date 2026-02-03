@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CaregiverProvider()),
       ],
       child: MaterialApp(
-        title: 'Maternity Support',
+        title: 'Motherly',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
           textTheme: GoogleFonts.poppinsTextTheme(),

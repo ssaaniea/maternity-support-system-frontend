@@ -83,15 +83,17 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             (Route<dynamic> route) => false,
           );
-        } else if (role == 'doctor') {
-          // TODO: Replace with DoctorSignupDetails when implemented
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute<void>(
-              builder: (context) => const MotherAppShell(),
-            ),
-            (Route<dynamic> route) => false,
-          );
-        } else if (role == 'caregiver') {
+        }
+        // else if (role == 'doctor') {
+        //   // TODO: Replace with DoctorSignupDetails when implemented
+        //   Navigator.of(context).pushAndRemoveUntil(
+        //     MaterialPageRoute<void>(
+        //       builder: (context) => const MotherAppShell(),
+        //     ),
+        //     (Route<dynamic> route) => false,
+        //   );
+        // }
+        else if (role == 'caregiver') {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute<void>(
               builder: (context) => const CaregiverSignupDetails(),
@@ -315,7 +317,7 @@ class _SignupScreenState extends State<SignupScreen> {
       ),
       items: const [
         DropdownMenuItem(value: 'mother', child: Text('Mother')),
-        DropdownMenuItem(value: 'doctor', child: Text('Doctor')),
+        // DropdownMenuItem(value: 'doctor', child: Text('Doctor')),
         DropdownMenuItem(value: 'caregiver', child: Text('Caregiver')),
       ],
       onChanged: (value) {

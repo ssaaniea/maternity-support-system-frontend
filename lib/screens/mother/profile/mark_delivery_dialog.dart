@@ -248,7 +248,11 @@ class _MarkDeliveryDialogState extends State<MarkDeliveryDialog> {
               children: [
                 const Icon(Iconsax.calendar, color: Colors.pink),
                 const SizedBox(width: 12),
-                Text(DateFormat('EEEE, MMMM d, yyyy').format(_deliveryDate)),
+                Expanded(
+                  child: Text(
+                    DateFormat('EEEE, MMMM d, yyyy').format(_deliveryDate),
+                  ),
+                ),
               ],
             ),
           ),
@@ -267,7 +271,7 @@ class _MarkDeliveryDialogState extends State<MarkDeliveryDialog> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildTypeChip('c-section', 'C-Section', Iconsax.hospital),
+              child: _buildTypeChip(' -section', 'C-Section', Iconsax.hospital),
             ),
           ],
         ),
